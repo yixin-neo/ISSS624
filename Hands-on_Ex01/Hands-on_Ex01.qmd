@@ -64,10 +64,82 @@ it preserves direction and angles. It is useful for navigation (google map) . It
 st_geometry(mpsz)
 ```
 
-Basic information like type of geometry, geographic extent of the features and the coordinate system of the data is displayed.
+Basic information like type of geometry, geographic extent of the features and the coordinate system (syv21) of the data is displayed.
 
 ### Working with glimpse() of dplyr
 
+Shows the data type of each field.
+
 ```{r}
 glimpse(mpsz)
+```
+
+### Working with head()
+
+Reveals complete information of a feature object; show first 5 rows.
+
+```{r}
+head(mpsz, n =5)
+```
+
+### Plotting the Geospatial Data
+
+The amazing part about Choropleth map is that it is able to plot both numerical and categorical data!
+
+```{r}
+plot(mpsz)
+```
+
+To plot only the geometry:
+
+```{r}
+plot(st_geometry(mpsz))
+```
+
+Alternatively, to plot the sf object by using only a specific attribute *PLN_AREA_N*:
+
+```{r}
+plot(mpsz["PLN_AREA_N"])
+```
+
+*\*Note: plot() is mean for plotting the Geospatial object for quick look. For high cartographic quality plot, other R package such as tmap should be used.*
+
+### Working with Projection 
+
+To perform Geoprocessing using two Geospatial data, both sets of Geospatial data need to be projected using similar coordinate system. In this section, a simple feature data frame will be projected from one coordinate system to another coordinate system. This process is called **projection transformation**.
+
+#### Assigning EPSG code to a simple feature data frame
+
+*crs - coordinate reference system*
+
+```{r}
+st_crs(mpsz)
+```
+
+Note that the EPSG code for svy21 should be 3414, lets get it right.
+
+```{r}
+mpsz3414 <- st_set_crs(mpsz,3414)
+```
+
+```{r}
+st_crs(mpsz3414)
+```
+
+#### Transforming the projection of preschool from wgs84 to svy21
+
+We transform original data in geographic coordinate system to projected coordinate system if the analysis requires the use of distance / area measurements.
+
+```{r}
+st_geometry(preschool)
+```
+
+preschool simple feature data frame is in WSG84 coordinate system. To re-project preschool data frame to another coordinate system mathematically, use the st_transform() function of sf package.
+
+```{r}
+preschool3414 <- st_transform(preschool,crs=3414)
+```
+
+```{r}
+st_geometry(preschool3414)
 ```
