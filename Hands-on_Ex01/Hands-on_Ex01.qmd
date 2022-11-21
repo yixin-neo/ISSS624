@@ -43,16 +43,15 @@ preschool <- st_read("data/geospatial/pre-schools-location-kml.kml")
 
 Different projection can help to achieve:
 
--    minimize distortion in **shape**
+-   minimize distortion in **shape**
 
 -   minimize distortion in **distance**
 
 -   minimize distortion in **area**
 
--    minimize distortion in **direction**.
+-   minimize distortion in **direction**.
 
-Google maps uses Mercator projection system. It is chosen as
-it preserves direction and angles. It is useful for navigation (google map) . It is originally created for sea navigation in older days. The cons are that this projection does not preserve area and shape.
+Google maps uses Mercator projection system. It is chosen as it preserves direction and angles. It is useful for navigation (google map) . It is originally created for sea navigation in older days. The cons are that this projection does not preserve area and shape.
 
 **"Projected coordinate system flattens the globe whereas the geodesic one is still a spherical/ellipsoid globe"** (Zhu, 2022)
 
@@ -82,7 +81,7 @@ Reveals complete information of a feature object; show first 5 rows.
 head(mpsz, n =5)
 ```
 
-### Plotting the Geospatial Data
+## Section C: Plotting the Geospatial Data
 
 The amazing part about Choropleth map is that it is able to plot both numerical and categorical data!
 
@@ -104,11 +103,11 @@ plot(mpsz["PLN_AREA_N"])
 
 *\*Note: plot() is mean for plotting the Geospatial object for quick look. For high cartographic quality plot, other R package such as tmap should be used.*
 
-### Working with Projection 
+## Section D: Working with Projection
 
 To perform Geoprocessing using two Geospatial data, both sets of Geospatial data need to be projected using similar coordinate system. In this section, a simple feature data frame will be projected from one coordinate system to another coordinate system. This process is called **projection transformation**.
 
-#### Assigning EPSG code to a simple feature data frame
+### Assigning EPSG code to a simple feature data frame
 
 *crs - coordinate reference system*
 
@@ -126,7 +125,7 @@ mpsz3414 <- st_set_crs(mpsz,3414)
 st_crs(mpsz3414)
 ```
 
-#### Transforming the projection of preschool from wgs84 to svy21
+### Transforming the projection of preschool from wgs84 to svy21
 
 We transform original data in geographic coordinate system to projected coordinate system if the analysis requires the use of distance / area measurements.
 
@@ -142,4 +141,48 @@ preschool3414 <- st_transform(preschool,crs=3414)
 
 ```{r}
 st_geometry(preschool3414)
+```
+
+## Section E: Importing and converting an Aspatial Data and save it as tibble data frame, then simple feature data frame
+
+```{r}
+library(readr)
+listings <- read_csv("data/aspatial/listings.csv")
+```
+
+Examine whether data file has been imported correctly using list()
+
+```{r}
+list(listings)
+```
+
+\*note the latitude and longitude are in decimal degree format. It suggests the data in in WSG84 Geographic Coordinate System.
+
+### Creating a simple feature data frame from an aspatial data frame
+
+To convert listings data frame into a simple feature data frame, use the st_as_sf() of the sf packages.
+
+```{r}
+library(dplyr)
+library(sf)
+library(tidyverse)
+listings_sf <- st_as_sf(listings, coords=c("longitude","latitude"),crs=4326) %>% 
+  st_transform(crs=3414)
+  
+```
+
+-   *coords* argument requires you to provide the column name of the x-coordinates first then followed by the column name of the y-coordinates.
+
+-   *crs* argument requires you to provide the coordinates system in epsg format. [EPSG: 4326](https://epsg.io/4326) is wgs84 Geographic Coordinate System and [EPSG: 3414](https://epsg.io/3414) is Singapore SVY21 Projected Coordinate System. You can search for other country's epsg code by referring to [epsg.io](https://epsg.io/).
+
+-   *%\>%* is used to nest *st_transform()* to transform the newly created simple feature data frame into svy21 projected coordinates system.
+
+```{r}
+glimpse(listings_sf)
+```
+
+A new column called `geometry` has been added into the data frame. On the other hand, the `longitude` and `latitude` columns have been dropped from the data frame.
+
+```{r}
+plot(listings_sf)
 ```

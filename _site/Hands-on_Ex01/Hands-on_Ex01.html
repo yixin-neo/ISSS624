@@ -187,8 +187,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#working-with-st_geometry" id="toc-working-with-st_geometry" class="nav-link" data-scroll-target="#working-with-st_geometry">Working with st_geometry()</a></li>
   <li><a href="#working-with-glimpse-of-dplyr" id="toc-working-with-glimpse-of-dplyr" class="nav-link" data-scroll-target="#working-with-glimpse-of-dplyr">Working with glimpse() of dplyr</a></li>
   <li><a href="#working-with-head" id="toc-working-with-head" class="nav-link" data-scroll-target="#working-with-head">Working with head()</a></li>
-  <li><a href="#plotting-the-geospatial-data" id="toc-plotting-the-geospatial-data" class="nav-link" data-scroll-target="#plotting-the-geospatial-data">Plotting the Geospatial Data</a></li>
-  <li><a href="#working-with-projection" id="toc-working-with-projection" class="nav-link" data-scroll-target="#working-with-projection">Working with Projection</a></li>
+  </ul></li>
+  <li><a href="#section-c-plotting-the-geospatial-data" id="toc-section-c-plotting-the-geospatial-data" class="nav-link" data-scroll-target="#section-c-plotting-the-geospatial-data">Section C: Plotting the Geospatial Data</a></li>
+  <li><a href="#section-d-working-with-projection" id="toc-section-d-working-with-projection" class="nav-link" data-scroll-target="#section-d-working-with-projection">Section D: Working with Projection</a>
+  <ul class="collapse">
+  <li><a href="#assigning-epsg-code-to-a-simple-feature-data-frame" id="toc-assigning-epsg-code-to-a-simple-feature-data-frame" class="nav-link" data-scroll-target="#assigning-epsg-code-to-a-simple-feature-data-frame">Assigning EPSG code to a simple feature data frame</a></li>
+  <li><a href="#transforming-the-projection-of-preschool-from-wgs84-to-svy21" id="toc-transforming-the-projection-of-preschool-from-wgs84-to-svy21" class="nav-link" data-scroll-target="#transforming-the-projection-of-preschool-from-wgs84-to-svy21">Transforming the projection of preschool from wgs84 to svy21</a></li>
+  </ul></li>
+  <li><a href="#section-e-importing-and-converting-an-aspatial-data-and-save-it-as-tibble-data-frame-then-simple-feature-data-frame" id="toc-section-e-importing-and-converting-an-aspatial-data-and-save-it-as-tibble-data-frame-then-simple-feature-data-frame" class="nav-link" data-scroll-target="#section-e-importing-and-converting-an-aspatial-data-and-save-it-as-tibble-data-frame-then-simple-feature-data-frame">Section E: Importing and converting an Aspatial Data and save it as tibble data frame, then simple feature data frame</a>
+  <ul class="collapse">
+  <li><a href="#creating-a-simple-feature-data-frame-from-an-aspatial-data-frame" id="toc-creating-a-simple-feature-data-frame-from-an-aspatial-data-frame" class="nav-link" data-scroll-target="#creating-a-simple-feature-data-frame-from-an-aspatial-data-frame">Creating a simple feature data frame from an aspatial data frame</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -376,8 +384,9 @@ Projected CRS: SVY21
 </div>
 </div>
 </section>
-<section id="plotting-the-geospatial-data" class="level3">
-<h3 class="anchored" data-anchor-id="plotting-the-geospatial-data">Plotting the Geospatial Data</h3>
+</section>
+<section id="section-c-plotting-the-geospatial-data" class="level2">
+<h2 class="anchored" data-anchor-id="section-c-plotting-the-geospatial-data">Section C: Plotting the Geospatial Data</h2>
 <p>The amazing part about Choropleth map is that it is able to plot both numerical and categorical data!</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mpsz)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -405,11 +414,11 @@ all</code></pre>
 </div>
 <p><em>*Note: plot() is mean for plotting the Geospatial object for quick look. For high cartographic quality plot, other R package such as tmap should be used.</em></p>
 </section>
-<section id="working-with-projection" class="level3">
-<h3 class="anchored" data-anchor-id="working-with-projection">Working with Projection</h3>
+<section id="section-d-working-with-projection" class="level2">
+<h2 class="anchored" data-anchor-id="section-d-working-with-projection">Section D: Working with Projection</h2>
 <p>To perform Geoprocessing using two Geospatial data, both sets of Geospatial data need to be projected using similar coordinate system. In this section, a simple feature data frame will be projected from one coordinate system to another coordinate system. This process is called <strong>projection transformation</strong>.</p>
-<section id="assigning-epsg-code-to-a-simple-feature-data-frame" class="level4">
-<h4 class="anchored" data-anchor-id="assigning-epsg-code-to-a-simple-feature-data-frame">Assigning EPSG code to a simple feature data frame</h4>
+<section id="assigning-epsg-code-to-a-simple-feature-data-frame" class="level3">
+<h3 class="anchored" data-anchor-id="assigning-epsg-code-to-a-simple-feature-data-frame">Assigning EPSG code to a simple feature data frame</h3>
 <p><em>crs - coordinate reference system</em></p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(mpsz)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -509,8 +518,8 @@ PROJCRS["SVY21 / Singapore TM",
 </div>
 </div>
 </section>
-<section id="transforming-the-projection-of-preschool-from-wgs84-to-svy21" class="level4">
-<h4 class="anchored" data-anchor-id="transforming-the-projection-of-preschool-from-wgs84-to-svy21">Transforming the projection of preschool from wgs84 to svy21</h4>
+<section id="transforming-the-projection-of-preschool-from-wgs84-to-svy21" class="level3">
+<h3 class="anchored" data-anchor-id="transforming-the-projection-of-preschool-from-wgs84-to-svy21">Transforming the projection of preschool from wgs84 to svy21</h3>
 <p>We transform original data in geographic coordinate system to projected coordinate system if the analysis requires the use of distance / area measurements.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_geometry</span>(preschool)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -570,9 +579,104 @@ First 5 geometries:</code></pre>
 <pre><code>POINT Z (34155.79 41949.13 0)</code></pre>
 </div>
 </div>
-
-
 </section>
+</section>
+<section id="section-e-importing-and-converting-an-aspatial-data-and-save-it-as-tibble-data-frame-then-simple-feature-data-frame" class="level2">
+<h2 class="anchored" data-anchor-id="section-e-importing-and-converting-an-aspatial-data-and-save-it-as-tibble-data-frame-then-simple-feature-data-frame">Section E: Importing and converting an Aspatial Data and save it as tibble data frame, then simple feature data frame</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>listings <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/aspatial/listings.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 4161 Columns: 18
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr   (6): name, host_name, neighbourhood_group, neighbourhood, room_type, l...
+dbl  (11): id, host_id, latitude, longitude, price, minimum_nights, number_o...
+date  (1): last_review
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<p>Examine whether data file has been imported correctly using list()</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(listings)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+# A tibble: 4,161 × 18
+       id name     host_id host_…¹ neigh…² neigh…³ latit…⁴ longi…⁵ room_…⁶ price
+    &lt;dbl&gt; &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
+ 1  50646 Pleasan…  227796 Sujatha Centra… Bukit …    1.33    104. Privat…    80
+ 2  71609 Ensuite…  367042 Belinda East R… Tampin…    1.35    104. Privat…   145
+ 3  71896 B&amp;B  Ro…  367042 Belinda East R… Tampin…    1.35    104. Privat…    85
+ 4  71903 Room 2-…  367042 Belinda East R… Tampin…    1.35    104. Privat…    85
+ 5 275344 15 mins… 1439258 Kay     Centra… Bukit …    1.29    104. Privat…    49
+ 6 289234 Booking…  367042 Belinda East R… Tampin…    1.34    104. Privat…   184
+ 7 294281 5 mins … 1521514 Elizab… Centra… Newton     1.31    104. Privat…    79
+ 8 324945 Cozy Bl… 1439258 Kay     Centra… Bukit …    1.29    104. Privat…    49
+ 9 330089 Cozy Bl… 1439258 Kay     Centra… Bukit …    1.29    104. Privat…    55
+10 330095 10 mins… 1439258 Kay     Centra… Bukit …    1.29    104. Privat…    55
+# … with 4,151 more rows, 8 more variables: minimum_nights &lt;dbl&gt;,
+#   number_of_reviews &lt;dbl&gt;, last_review &lt;date&gt;, reviews_per_month &lt;dbl&gt;,
+#   calculated_host_listings_count &lt;dbl&gt;, availability_365 &lt;dbl&gt;,
+#   number_of_reviews_ltm &lt;dbl&gt;, license &lt;chr&gt;, and abbreviated variable names
+#   ¹​host_name, ²​neighbourhood_group, ³​neighbourhood, ⁴​latitude, ⁵​longitude,
+#   ⁶​room_type</code></pre>
+</div>
+</div>
+<p>*note the latitude and longitude are in decimal degree format. It suggests the data in in WSG84 Geographic Coordinate System.</p>
+<section id="creating-a-simple-feature-data-frame-from-an-aspatial-data-frame" class="level3">
+<h3 class="anchored" data-anchor-id="creating-a-simple-feature-data-frame-from-an-aspatial-data-frame">Creating a simple feature data frame from an aspatial data frame</h3>
+<p>To convert listings data frame into a simple feature data frame, use the st_as_sf() of the sf packages.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>listings_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(listings, <span class="at">coords=</span><span class="fu">c</span>(<span class="st">"longitude"</span>,<span class="st">"latitude"</span>),<span class="at">crs=</span><span class="dv">4326</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>(<span class="at">crs=</span><span class="dv">3414</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li><p><em>coords</em> argument requires you to provide the column name of the x-coordinates first then followed by the column name of the y-coordinates.</p></li>
+<li><p><em>crs</em> argument requires you to provide the coordinates system in epsg format. <a href="https://epsg.io/4326">EPSG: 4326</a> is wgs84 Geographic Coordinate System and <a href="https://epsg.io/3414">EPSG: 3414</a> is Singapore SVY21 Projected Coordinate System. You can search for other country’s epsg code by referring to <a href="https://epsg.io/">epsg.io</a>.</p></li>
+<li><p><em>%&gt;%</em> is used to nest <em>st_transform()</em> to transform the newly created simple feature data frame into svy21 projected coordinates system.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(listings_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 4,161
+Columns: 17
+$ id                             &lt;dbl&gt; 50646, 71609, 71896, 71903, 275344, 289…
+$ name                           &lt;chr&gt; "Pleasant Room along Bukit Timah", "Ens…
+$ host_id                        &lt;dbl&gt; 227796, 367042, 367042, 367042, 1439258…
+$ host_name                      &lt;chr&gt; "Sujatha", "Belinda", "Belinda", "Belin…
+$ neighbourhood_group            &lt;chr&gt; "Central Region", "East Region", "East …
+$ neighbourhood                  &lt;chr&gt; "Bukit Timah", "Tampines", "Tampines", …
+$ room_type                      &lt;chr&gt; "Private room", "Private room", "Privat…
+$ price                          &lt;dbl&gt; 80, 145, 85, 85, 49, 184, 79, 49, 55, 5…
+$ minimum_nights                 &lt;dbl&gt; 92, 92, 92, 92, 60, 92, 92, 60, 60, 60,…
+$ number_of_reviews              &lt;dbl&gt; 18, 20, 24, 47, 14, 12, 133, 17, 12, 3,…
+$ last_review                    &lt;date&gt; 2014-12-26, 2020-01-17, 2019-10-13, 20…
+$ reviews_per_month              &lt;dbl&gt; 0.18, 0.15, 0.18, 0.34, 0.11, 0.10, 1.0…
+$ calculated_host_listings_count &lt;dbl&gt; 1, 6, 6, 6, 44, 6, 7, 44, 44, 44, 6, 7,…
+$ availability_365               &lt;dbl&gt; 365, 340, 265, 365, 296, 285, 365, 181,…
+$ number_of_reviews_ltm          &lt;dbl&gt; 0, 0, 0, 0, 1, 0, 0, 3, 2, 0, 1, 0, 0, …
+$ license                        &lt;chr&gt; NA, NA, NA, NA, "S0399", NA, NA, "S0399…
+$ geometry                       &lt;POINT [m]&gt; POINT (22646.02 35167.9), POINT (…</code></pre>
+</div>
+</div>
+<p>A new column called <code>geometry</code> has been added into the data frame. On the other hand, the <code>longitude</code> and <code>latitude</code> columns have been dropped from the data frame.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(listings_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: plotting the first 9 out of 16 attributes; use max.plot = 16 to plot
+all</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="Hands-on_Ex01_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+
+
 </section>
 </section>
 
