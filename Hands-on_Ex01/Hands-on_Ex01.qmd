@@ -15,10 +15,59 @@ The code chunk below is installed to load [sf](https://r-spatial.github.io/sf/) 
 pacman::p_load(sf,tidyverse)
 ```
 
-## Importing Geospatial Data
+## Section A: Importing Geospatial Data
+
+The shapefile format can spatially describe vector features: (1) polygons, (2) polylines or (3) points.
 
 ### Importing polygon feature data
 
+The st_read() function requires two input arguments ; *dsn* to define data path and *layer* to define the shapefile name.
+
 ```{r}
 mpsz <- st_read(dsn = "data/geospatial", layer = "MP14_SUBZONE_WEB_PL")
+```
+
+### Importing polyline feature data
+
+```{r}
+cyclingpath <- st_read(dsn="data/geospatial", layer = "CyclingPathGazette")
+```
+
+### Importing GIS data in kml format
+
+```{r}
+preschool <- st_read("data/geospatial/pre-schools-location-kml.kml")
+```
+
+*Click [here](https://alemoranordonez.wordpress.com/2015/07/30/what-on-earth-are-coordinate-systems-and-which-one-should-i-use-part-13-lets-clarify-some-concepts/) or [here](https://esriaustraliatechblog.wordpress.com/2021/03/31/understanding-spatial-references-in-australia/) for explanation on coordinate systems!*
+
+Different projection can help to achieve:
+
+-    minimize distortion in **shape**
+
+-   minimize distortion in **distance**
+
+-   minimize distortion in **area**
+
+-    minimize distortion in **direction**.
+
+Google maps uses Mercator projection system. It is chosen as
+it preserves direction and angles. It is useful for navigation (google map) . It is originally created for sea navigation in older days. The cons are that this projection does not preserve area and shape.
+
+**"Projected coordinate system flattens the globe whereas the geodesic one is still a spherical/ellipsoid globe"** (Zhu, 2022)
+
+## Section B: Checking the content of a Simple Feature Data Frame
+
+### Working with st_geometry()
+
+```{r}
+st_geometry(mpsz)
+```
+
+Basic information like type of geometry, geographic extent of the features and the coordinate system of the data is displayed.
+
+### Working with glimpse() of dplyr
+
+```{r}
+glimpse(mpsz)
 ```
