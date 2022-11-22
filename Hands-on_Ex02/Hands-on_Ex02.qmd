@@ -1,0 +1,150 @@
+---
+title: "Hands-on_Ex02"
+editor: visual
+---
+
+## Overview
+
+In this hands-on exercise, I learn how to plot functional and truthful choropleth maps by using r packages called **tmap** package.
+
+Beside **tmap** package, four other R packages will be used. They are:
+
+-   [**readr**](https://readr.tidyverse.org/) for importing delimited text file,
+
+-   [**tidyr**](https://tidyr.tidyverse.org/) for tidying data,
+
+-   [**dplyr**](https://dplyr.tidyverse.org/) for wrangling data and
+
+-   [**sf**](https://cran.r-project.org/web/packages/sf/) for handling geospatial data.
+
+```{r}
+#pacman::p_load(sf,tmap, tidyverse)
+library(sf)
+library(tidyverse)
+library("tmap")
+```
+
+## Import Geospatial Data into R
+
+```{r}
+mpsz <- st_read(dsn="data/geospatial", layer = "MP14_SUBZONE_WEB_PL")
+```
+
+```{r}
+mpsz
+```
+
+## Import attribute data into R
+
+```{r}
+popdata <- read_csv("data/aspatial/respopagesextod2011to2020.csv")
+```
+
+```{r}
+popdata %>% head()
+```
+
+## Data preparation
+
+Prepare a data table with year 2020 values. The data table should include the variables PA, SZ, YOUNG, ECONOMY ACTIVE, AGED, TOTAL, DEPENDENCY.
+
+-   YOUNG: age group 0 to 4 until age groyup 20 to 24,
+
+-   ECONOMY ACTIVE: age group 25-29 until age group 60-64,
+
+-   AGED: age group 65 and above,
+
+-   TOTAL: all age group, and
+
+-   DEPENDENCY: the ratio between young and aged against economy active group
+
+### 
+Data Wrangling
+
+-   *pivot_wider()* of **tidyr** package, and
+
+-   *mutate()*, *filter()*, *group_by()* and *select()* of **dplyr** package
+
+```{r}
+popdata2020 <- popdata %>% 
+  filter(Time == 2020) %>% 
+  group_by(PA,SZ,AG) %>% 
+  summarise(POP = sum(Pop)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = AG,values_from = POP) %>% 
+  mutate(YOUNG = rowSums(.[3:6])
+         +rowSums(.[12])) %>% 
+  mutate(`ECONOMY ACTIVE` = rowSums(.[7:11])+rowSums(.[13:15])) %>%
+  mutate(AGED = rowSums(.[16:21])) %>%
+  mutate(TOTAL = rowSums(.[3:21])) %>% 
+  mutate(DEPENDENCY = (YOUNG + AGED)/`ECONOMY ACTIVE`) %>% 
+  select(PA,SZ,YOUNG,`ECONOMY ACTIVE`, AGED, TOTAL, DEPENDENCY)
+  
+  
+popdata2020 
+```
+
+### Joining the attribute data and geospatial data
+
+Convert PA and SZ fields in popdata2020 into all uppercase
+
+```{r}
+popdata2020 <- popdata2020 %>% 
+  mutate_at(.var= vars(PA,SZ),
+            .funs = funs(toupper)) %>%
+  filter(`ECONOMY ACTIVE` >0)
+
+```
+
+Next, *left_join()* of **dplyr** is used to join the geographical data and attribute table using planning subzone name e.g. *SUBZONE_N* and *SZ* as the common identifier.
+
+```{r}
+mpsz_pop2020 <- left_join(mpsz, popdata2020,
+                          by = c("SUBZONE_N" = "SZ"))
+```
+
+```{r}
+write_rds(mpsz_pop2020, "data/rds/mpszpop2020.rds")
+
+```
+
+## Choropleth Mapping Geospatial Data Using tmap
+
+Two approaches can be used to prepare thematic map using *tmap*, they are:
+
+-   Plotting a thematic map quickly by using *qtm()*.
+
+-   Plotting highly customisable thematic map by using tmap elements.
+
+### Plotting a choropleth map quickly using qtm()
+
+```{r}
+top_n(mpsz_pop2020, -15,`DEPENDENCY`)
+
+```
+
+```{r}
+tmap_mode("plot")
+qtm(mpsz_pop2020,
+    fill = "DEPENDENCY")
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "Blues",
+          title = "Dependency ratio") +
+  tm_layout(main.title = "Distribution of Dependency Ratio by planning subzone",
+            main.title.position = "center",
+            main.title.size = 1.2,
+            legend.height = 0.45, 
+            legend.width = 0.35,
+            frame = TRUE) +
+  tm_borders(alpha = 0.5) +
+  tm_compass(type="8star", size = 2) +
+  tm_scale_bar() +
+  tm_grid(alpha =0.2) +
+  tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)\n and Population data from Department of Statistics DOS", 
+             position = c("left", "bottom"))
+```
