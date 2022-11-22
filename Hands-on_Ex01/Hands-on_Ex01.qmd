@@ -12,7 +12,10 @@ In this hands-on exercise, I learn how to import and wrangle Geospatial data usi
 The code chunk below is installed to load [sf](https://r-spatial.github.io/sf/) and tidyverse packages into R environment.
 
 ```{r}
-pacman::p_load(sf,tidyverse)
+#pacman::p_load(sf,tidyverse)
+library(sf)
+library(tidyverse)
+library(dplyr)
 ```
 
 ## Section A: Importing Geospatial Data
@@ -232,7 +235,7 @@ sum(buffer_cycling$AREA)
 class(buffer_cycling)
 ```
 
-##### Understanding [st_buffer()](https://cran.r-project.org/web/packages/sf/sf.pdf)  \<- page 29
+##### Understanding [st_buffer()](https://cran.r-project.org/web/packages/sf/sf.pdf) \<- page 29
 
 ```{r}
 l1 = st_as_sfc("LINESTRING(0 0,1 5,4 5,5 2,8 2,9 4,4 6.5)")
@@ -263,10 +266,34 @@ A pre-school service group want to find out the numbers of pre-schools in each P
 
 Solution:
 
-1.  st_intersects() \<\-- what is this???
-2.  lengths() of base R \<\-- what is this???
+1.  [st_intersects()](https://r-spatial.github.io/sf/reference/geos_binary_pred.html) The ST_Intersects() function returns t (TRUE) if the intersection of two geometries does not result in an empty set; otherwise, returns f (FALSE).
+
+    \*For intersection on pairs of simple feature geometries (two polygons), use the function `st_intersection` instead of `st_intersects`
+
+2.  [lengths()](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/length) of base R
+
+    Get or set the length of vectors (including lists) and factors, and of any other R object for which a method has been defined.
+
+3.  [*top_n()*](https://dplyr.tidyverse.org/reference/top_n.html) of **dplyr** package
+
+Code below shows the points lying in the polygons
 
 ```{r}
+#mpsz3414 is polygon (323 entries) but preschool3414 is points (1925 entries)
+test1 <- st_intersects(mpsz3414, preschool3414)
+test1
+```
+
+Code below sums the number of points in each polygon
+
+```{r}
+lengths(st_intersects(mpsz3414, preschool3414))
+```
+
+Combining all together and creating a new column in mpsz3414
+
+```{r}
+#mpsz3414 is polygon but preschool3414 is points
 mpsz3414$`Presch Count` <- lengths(st_intersects(mpsz3414, preschool3414))
 ```
 
@@ -274,6 +301,62 @@ mpsz3414$`Presch Count` <- lengths(st_intersects(mpsz3414, preschool3414))
 summary(mpsz3414$`Presch Count`)
 ```
 
+Find subzone with most number of preschools in Singapore
+
 ```{r}
 top_n(mpsz3414, 1,`Presch Count`)
 ```
+
+Next task: Calculate the density of pre-school by planning subzone.
+
+Solution:
+
+1.  use [*st_area()*](https://r-spatial.github.io/sf/reference/geos_measures.html) of **sf** package to derive the area of each planning subzone
+2.  Next, [*mutate()*](https://dplyr.tidyverse.org/reference/mutate.html) of [**dplyr**](https://dplyr.tidyverse.org/) package is used to compute the density
+
+```{r}
+mpsz3414$AREA <- mpsz3414 %>% st_area()
+```
+
+```{r}
+mpsz3414 <- mpsz3414 %>% mutate(`PreSch Density` = `Presch Count`/AREA *100000)
+```
+
+```{r}
+top_n(mpsz3414, 5,`PreSch Density`)
+```
+
+```{r}
+plot(mpsz3414["PreSch Density"])
+```
+
+## Section G: Exploratory Data Analysis (EDA)
+
+Using [ggplot2](https://ggplot2.tidyverse.org/) functions to create functional and yet truthful statistical graphs for EDA purposes.
+
+```{r}
+hist(mpsz3414$`PreSch Density` ,main = "Histogram of PreSch Density in Planning subzones", xlab = "Density")
+```
+
+```{r}
+ggplot(data=mpsz3414,
+       aes(x=as.numeric(`PreSch Density`))) + 
+  geom_histogram(bins=20,
+                 color='black',
+                 fill ="light blue") +
+  labs(title= 'Are Pre-schools evenly distributed in Singapore?',
+       subtitle = 'There are many planning subzones with a single pre-school, on the other hand, \nthere are two planning subzones with at least 20 pre-schools',
+       x='Frequency',
+       y= 'Pre-School Density (per km sq)')
+```
+
+```{r}
+ggplot(data=mpsz3414,
+       aes(x=as.numeric(`PreSch Density`), y= as.numeric(`Presch Count`))) + 
+  geom_point(color='blue') +
+  labs(title= 'Scatterplot of Pre-school Count against Density',
+       x='Pre-school Density (per km sq)',
+       y= 'Pre-School Count')
+```
+
+to be continued
