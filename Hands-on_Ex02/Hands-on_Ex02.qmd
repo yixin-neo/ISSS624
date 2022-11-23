@@ -503,29 +503,68 @@ tm_shape(mpsz_pop2020)+
 
 #### 2.4.6.2 By defining a group-by variable in tm_facets()
 
-```{r}
+In this example, multiple small choropleth maps are created by using **tm_facets()**.
 
-```
-
-```{r}
-
-```
+**thres.poly**: number that specifies the threshold at which polygons are taken into account. The number itself corresponds to the proportion of the area sizes of the polygons to the total polygon size. By default, all polygons are drawn.
 
 ```{r}
-
+tm_shape(mpsz_pop2020) +
+  tm_fill('DEPENDENCY',
+          style= 'quantile',
+          palette = 'Blues',
+          thres.poly = 0) +
+  tm_facets(by = 'REGION_N',
+            free.coords = TRUE,
+            drop.shapes = TRUE) +
+  tm_layout(legend.show = FALSE,
+            title.position = c('center','center'),
+            title.size = 20) +
+  tm_borders(alpha = 0.5)
+  
 ```
+
+#### 2.4.6.3 By creating multiple stand-alone maps with *tmap_arrange()*
+
+Creating multiple stand-alone maps with *tmap_arrange()* asp : aspect ratio
+
+nrow : number of rows (ncols)
 
 ```{r}
+youngmap <- tm_shape(mpsz_pop2020) + 
+  tm_polygons('YOUNG',
+              style= 'quantile',
+              palette = 'Blues')
 
+agedmap <- tm_shape(mpsz_pop2020) + 
+  tm_polygons('AGED',
+              style= 'quantile',
+              palette = 'Blues')
+
+tmap_arrange(youngmap,agedmap, asp = 3, nrow=2)
 ```
+
+### 2.4.7 Mappping Spatial Object Meeting a Selection Criterion
 
 ```{r}
-
+tm_shape(mpsz_pop2020[mpsz_pop2020$REGION_N == "CENTRAL REGION",]) +
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "Blues", 
+          legend.hist = TRUE, 
+          legend.is.portrait = TRUE,
+          legend.hist.z = 0.1) +
+  tm_layout(main.title = "Mapping spatial obj with conditions \n(Central Region)",
+            main.title.position = "center",
+            main.title.size = 1,
+            legend.height = 0.45, 
+            legend.width = 5.0,
+            legend.outside = TRUE,
+            legend.position = c("right", "bottom"),
+            frame = FALSE) +
+  tm_borders(alpha = 0.5)
 ```
 
-```{r}
-
-```
+https://rstudio-pubs-static.s3.amazonaws.com/730482_d7889d9c65c8422f843b3d4e0196633c.html
 
 ## 2.5 Reference
 
