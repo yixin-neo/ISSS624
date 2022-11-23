@@ -189,6 +189,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#choropleth-mapping-geospatial-data-using-tmap" id="toc-choropleth-mapping-geospatial-data-using-tmap" class="nav-link" data-scroll-target="#choropleth-mapping-geospatial-data-using-tmap">Choropleth Mapping Geospatial Data Using tmap</a>
   <ul class="collapse">
   <li><a href="#plotting-a-choropleth-map-quickly-using-qtm" id="toc-plotting-a-choropleth-map-quickly-using-qtm" class="nav-link" data-scroll-target="#plotting-a-choropleth-map-quickly-using-qtm">Plotting a choropleth map quickly using qtm()</a></li>
+  <li><a href="#creating-a-choropleth-map-by-using-tmaps-elements" id="toc-creating-a-choropleth-map-by-using-tmaps-elements" class="nav-link" data-scroll-target="#creating-a-choropleth-map-by-using-tmaps-elements">Creating a Choropleth map by using tmap’s elements</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -243,7 +244,7 @@ tidyverse 1.3.2 ──</code></pre>
 ✖ dplyr::filter() masks stats::filter()
 ✖ dplyr::lag()    masks stats::lag()</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tmap"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tmap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="import-geospatial-data-into-r" class="level2">
@@ -349,8 +350,8 @@ dbl (2): Pop, Time
 <h3 class="anchored" data-anchor-id="section"></h3>
 <p>Data Wrangling</p>
 <ul>
-<li><p><em>pivot_wider()</em> of <strong>tidyr</strong> package, and</p></li>
-<li><p><em>mutate()</em>, <em>filter()</em>, <em>group_by()</em> and <em>select()</em> of <strong>dplyr</strong> package</p></li>
+<li><p><em>pivot_wider()</em> (rows to column headers) of <strong>tidyr</strong> package, and</p></li>
+<li><p><em>mutate() (create new cal col)</em>, <em>filter() (subset rows)</em>, <em>group_by()</em> and <em>select() (select cols)</em> of <strong>dplyr</strong> package</p></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>popdata2020 <span class="ot">&lt;-</span> popdata <span class="sc">%&gt;%</span> </span>
@@ -388,15 +389,51 @@ dbl (2): Pop, Time
 # … with 322 more rows, and abbreviated variable name ¹​DEPENDENCY</code></pre>
 </div>
 </div>
+<p>Refer to this <a href="https://bookdown.org/yih_huynh/Guide-to-R-Book/groupby.html">link</a>for difference between group_by() - mutate() and group_by() - summarise()</p>
+<p>ungroup() usually done after performing calculation in group()</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>popdata20201 <span class="ot">&lt;-</span> popdata <span class="sc">%&gt;%</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Time <span class="sc">==</span> <span class="dv">2020</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(PA,SZ,AG) <span class="sc">%&gt;%</span> </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">POP =</span> <span class="fu">sum</span>(Pop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'PA', 'SZ'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>popdata20201</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6,308 × 4
+# Groups:   PA, SZ [332]
+   PA         SZ                     AG         POP
+   &lt;chr&gt;      &lt;chr&gt;                  &lt;chr&gt;    &lt;dbl&gt;
+ 1 Ang Mo Kio Ang Mo Kio Town Centre 0_to_4     170
+ 2 Ang Mo Kio Ang Mo Kio Town Centre 10_to_14   280
+ 3 Ang Mo Kio Ang Mo Kio Town Centre 15_to_19   340
+ 4 Ang Mo Kio Ang Mo Kio Town Centre 20_to_24   270
+ 5 Ang Mo Kio Ang Mo Kio Town Centre 25_to_29   260
+ 6 Ang Mo Kio Ang Mo Kio Town Centre 30_to_34   310
+ 7 Ang Mo Kio Ang Mo Kio Town Centre 35_to_39   330
+ 8 Ang Mo Kio Ang Mo Kio Town Centre 40_to_44   400
+ 9 Ang Mo Kio Ang Mo Kio Town Centre 45_to_49   480
+10 Ang Mo Kio Ang Mo Kio Town Centre 5_to_9     230
+# … with 6,298 more rows</code></pre>
+</div>
+</div>
 </section>
 <section id="joining-the-attribute-data-and-geospatial-data" class="level3">
 <h3 class="anchored" data-anchor-id="joining-the-attribute-data-and-geospatial-data">Joining the attribute data and geospatial data</h3>
-<p>Convert PA and SZ fields in popdata2020 into all uppercase</p>
+<p>Convert PA and SZ fields in popdata2020 into all uppercase using:</p>
+<ol type="1">
+<li>toupper() &lt;- to upper case</li>
+<li><a href="https://dplyr.tidyverse.org/reference/mutate_all.html">mutate.at()</a>&lt;- mutate multiple columns</li>
+<li>argument: .var &lt;- list of columns generated by vars()</li>
+<li>argument: .funs &lt;- a function fun, a quosure style lambda</li>
+</ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>popdata2020 <span class="ot">&lt;-</span> popdata2020 <span class="sc">%&gt;%</span> </span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_at</span>(<span class="at">.var=</span> <span class="fu">vars</span>(PA,SZ),</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">.funs =</span> <span class="fu">funs</span>(toupper)) <span class="sc">%&gt;%</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">ECONOMY ACTIVE</span><span class="st">`</span> <span class="sc">&gt;</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>popdata2020 <span class="ot">&lt;-</span> popdata2020 <span class="sc">%&gt;%</span> </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_at</span>(<span class="at">.var=</span> <span class="fu">vars</span>(PA,SZ),</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">.funs =</span> <span class="fu">funs</span>(toupper)) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="st">`</span><span class="at">ECONOMY ACTIVE</span><span class="st">`</span> <span class="sc">&gt;</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: `funs()` was deprecated in dplyr 0.8.0.
 Please use a list of either functions or lambdas: 
@@ -415,11 +452,11 @@ Call `lifecycle::last_lifecycle_warnings()` to see where this warning was genera
 </div>
 <p>Next, <em>left_join()</em> of <strong>dplyr</strong> is used to join the geographical data and attribute table using planning subzone name e.g.&nbsp;<em>SUBZONE_N</em> and <em>SZ</em> as the common identifier.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>mpsz_pop2020 <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mpsz, popdata2020,</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"SUBZONE_N"</span> <span class="ot">=</span> <span class="st">"SZ"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>mpsz_pop2020 <span class="ot">&lt;-</span> <span class="fu">left_join</span>(mpsz, popdata2020,</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"SUBZONE_N"</span> <span class="ot">=</span> <span class="st">"SZ"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(mpsz_pop2020, <span class="st">"data/rds/mpszpop2020.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#write_rds(mpsz_pop2020, "data/rds/mpszpop2020.rds")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -427,97 +464,84 @@ Call `lifecycle::last_lifecycle_warnings()` to see where this warning was genera
 <h2 class="anchored" data-anchor-id="choropleth-mapping-geospatial-data-using-tmap">Choropleth Mapping Geospatial Data Using tmap</h2>
 <p>Two approaches can be used to prepare thematic map using <em>tmap</em>, they are:</p>
 <ul>
-<li><p>Plotting a thematic map quickly by using <em>qtm()</em>.</p></li>
+<li><p>Plotting a thematic map quickly by using <a href="https://bookdown.org/lexcomber/brunsdoncomber2e/Ch3.html">qtm()</a> (Quick thematic plot)</p></li>
 <li><p>Plotting highly customisable thematic map by using tmap elements.</p></li>
 </ul>
 <section id="plotting-a-choropleth-map-quickly-using-qtm" class="level3">
 <h3 class="anchored" data-anchor-id="plotting-a-choropleth-map-quickly-using-qtm">Plotting a choropleth map quickly using qtm()</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">top_n</span>(mpsz_pop2020, <span class="sc">-</span><span class="dv">15</span>,<span class="st">`</span><span class="at">DEPENDENCY</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">top_n</span>(mpsz_pop2020, <span class="dv">1</span>,<span class="st">`</span><span class="at">DEPENDENCY</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Simple feature collection with 15 features and 21 fields
+<pre><code>Simple feature collection with 1 feature and 21 fields
 Geometry type: MULTIPOLYGON
 Dimension:     XY
-Bounding box:  xmin: 17364.17 ymin: 26398.47 xmax: 30794.28 ymax: 35488.95
+Bounding box:  xmin: 42513.65 ymin: 38644.89 xmax: 44163.44 ymax: 41072.58
 Projected CRS: SVY21
-First 10 features:
-   OBJECTID SUBZONE_NO       SUBZONE_N SUBZONE_C CA_IND      PLN_AREA_N
-1         3          3       BOAT QUAY    SRSZ03      Y SINGAPORE RIVER
-2         8          2     CLARKE QUAY    SRSZ02      Y SINGAPORE RIVER
-3        12          6 ALEXANDRA NORTH    BMSZ06      N     BUKIT MERAH
-4        27          8           CECIL    DTSZ08      Y   DOWNTOWN CORE
-5        31         11 CENTRAL SUBZONE    DTSZ11      Y   DOWNTOWN CORE
-6        34          2   PEOPLE'S PARK    OTSZ02      Y          OUTRAM
-7        53          3        SOMERSET    ORSZ03      Y         ORCHARD
-8        56         15            PORT    QTSZ15      N      QUEENSTOWN
-9        57          1     DHOBY GHAUT    MUSZ01      Y          MUSEUM
-10       62          9   TANJONG PAGAR    DTSZ09      Y   DOWNTOWN CORE
-   PLN_AREA_C       REGION_N REGION_C          INC_CRC FMEL_UPD_D   X_ADDR
-1          SR CENTRAL REGION       CR C35FEFF02B13E0E5 2014-12-05 29654.96
-2          SR CENTRAL REGION       CR 48661DC0FBA09F7A 2014-12-05 29253.21
-3          BM CENTRAL REGION       CR 4DC4BF8D86594CBF 2014-12-05 26548.25
-4          DT CENTRAL REGION       CR 65AA82AF6F4D925D 2014-12-05 29730.20
-5          DT CENTRAL REGION       CR 8EFE9EC1AEF2DA0A 2014-12-05 30125.84
-6          OT CENTRAL REGION       CR B4120D23006C932A 2014-12-05 28831.78
-7          OR CENTRAL REGION       CR F70C32D861DD6CA5 2014-12-05 28626.56
-8          QT CENTRAL REGION       CR 543ED13CCC907021 2014-12-05 21576.08
-9          MU CENTRAL REGION       CR AD3DE26295353551 2014-12-05 29320.07
-10         DT CENTRAL REGION       CR 4FFE6642FB35D40A 2014-12-05 29397.83
-     Y_ADDR SHAPE_Leng SHAPE_Area              PA YOUNG ECONOMY ACTIVE AGED
-1  29974.66   1740.926  160807.50 SINGAPORE RIVER     0             40   10
-2  30222.86   2208.619  290184.65 SINGAPORE RIVER     0             50   10
-3  30519.39   2907.051  293706.40     BUKIT MERAH   720           1740  160
-4  29011.33   2116.095  196619.86   DOWNTOWN CORE    20            230    0
-5  28683.04   5002.016 1070723.26   DOWNTOWN CORE   170            660   40
-6  29419.65   1822.193   93140.44          OUTRAM    20            200   60
-7  31494.90   3039.805  329437.93         ORCHARD     0             80    0
-8  28788.22  23438.819 7601894.00      QUEENSTOWN     0             60   20
-9  31245.75   2584.788  221973.34          MUSEUM    50            250   20
-10 28706.35   1787.710  145518.66   DOWNTOWN CORE    80            530   70
-   TOTAL DEPENDENCY                       geometry
-1     50 0.25000000 MULTIPOLYGON (((29932.33 29...
-2     60 0.20000000 MULTIPOLYGON (((29351.26 29...
-3   2620 0.50574713 MULTIPOLYGON (((26231.96 30...
-4    250 0.08695652 MULTIPOLYGON (((29808.18 28...
-5    870 0.31818182 MULTIPOLYGON (((30436.73 29...
-6    280 0.40000000 MULTIPOLYGON (((29099.02 29...
-7     80 0.00000000 MULTIPOLYGON (((28677.44 31...
-8     80 0.33333333 MULTIPOLYGON (((20404.57 30...
-9    320 0.28000000 MULTIPOLYGON (((29383.41 31...
-10   680 0.28301887 MULTIPOLYGON (((29612.3 286...</code></pre>
+  OBJECTID SUBZONE_NO   SUBZONE_N SUBZONE_C CA_IND PLN_AREA_N PLN_AREA_C
+1      229          6 LOYANG WEST    PRSZ06      N  PASIR RIS         PR
+     REGION_N REGION_C          INC_CRC FMEL_UPD_D   X_ADDR   Y_ADDR SHAPE_Leng
+1 EAST REGION       ER 05FD555397CBEE7A 2014-12-05 43294.83 39888.77   6203.002
+  SHAPE_Area        PA YOUNG ECONOMY ACTIVE AGED TOTAL DEPENDENCY
+1    2114789 PASIR RIS     0             10  190   200         19
+                        geometry
+1 MULTIPOLYGON (((43756.39 39...</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>tmap mode set to plotting</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qtm</span>(mpsz_pop2020,</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"DEPENDENCY"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="Hands-on_Ex02_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(mpsz_pop2020)<span class="sc">+</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"DEPENDENCY"</span>, </span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">style =</span> <span class="st">"quantile"</span>, </span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">palette =</span> <span class="st">"Blues"</span>,</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">title =</span> <span class="st">"Dependency ratio"</span>) <span class="sc">+</span></span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"Distribution of Dependency Ratio by planning subzone"</span>,</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">1.2</span>,</span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.height =</span> <span class="fl">0.45</span>, </span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.width =</span> <span class="fl">0.35</span>,</span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_compass</span>(<span class="at">type=</span><span class="st">"8star"</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_scale_bar</span>() <span class="sc">+</span></span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_grid</span>(<span class="at">alpha =</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_credits</span>(<span class="st">"Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)</span><span class="sc">\n</span><span class="st"> and Population data from Department of Statistics DOS"</span>, </span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>             <span class="at">position =</span> <span class="fu">c</span>(<span class="st">"left"</span>, <span class="st">"bottom"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qtm</span>(mpsz_pop2020,</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"DEPENDENCY"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="Hands-on_Ex02_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Things to learn from the code chunk above:</p>
+<ul>
+<li><p><em>tmap_mode()</em> with “plot” option is used to produce a static map. For interactive mode, “view” option should be used.</p></li>
+<li><p><em>fill</em> argument is used to map the attribute (i.e.&nbsp;DEPENDENCY)</p></li>
+</ul>
+</section>
+<section id="creating-a-choropleth-map-by-using-tmaps-elements" class="level3">
+<h3 class="anchored" data-anchor-id="creating-a-choropleth-map-by-using-tmaps-elements">Creating a Choropleth map by using <a href="https://www.rdocumentation.org/packages/tmap/versions/3.3-3/topics/tmap-element">tmap’s elements</a></h3>
+<p><a href="https://www.rdocumentation.org/packages/tmap/versions/3.3-3/topics/tm_shape">tm_shape()</a> &lt;- specify the shape object / spatial data object</p>
+<p><a href="https://www.rdocumentation.org/packages/tmap/versions/3.3-3/topics/tm_fill">tm_fill()</a> &lt;- fills polygons (no border)</p>
+<ul>
+<li><p>style: method to process the color scale when <strong><code>col (data variable)</code></strong> is a numeric variable. To process numeric and categorical use “cat”</p></li>
+<li><p><a href="https://renenyffenegger.ch/notes/development/languages/R/packages/tmaptools/index">palette</a> : palettes names or vectors of colors. default is taken from tm_layout’s aes.paletttes arg</p></li>
+</ul>
+<p>tm_borders() &lt;- draws the borders of polygons (alpha is 0-1, transparency)</p>
+<p>tm_polygons() &lt;- fills the polygon and draws the polygon borders</p>
+<p><a href="https://www.rdocumentation.org/packages/tmap/versions/3.3-3/topics/tm_layout">tm_layout()</a> &lt;- specify map layout</p>
+<ul>
+<li>aes.palette &lt;- ‘seq’ (sequential palettes), ‘div’ (diverging palettes) , ‘cat’ (categorical palettes)</li>
+</ul>
+<p><a href="https://www.rdocumentation.org/packages/tmap/versions/3.3-3/topics/tm_compass">tm_compass()</a> &lt;- create map compass</p>
+<p>tm_scale_bar() &lt;- creates scale bar</p>
+<p>tm_grid() &lt;- creates grid lines (alpha is 0-1, transparency of grid lines)</p>
+<p>tm_credits() &lt;- create a text for credits</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(mpsz_pop2020)<span class="sc">+</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"DEPENDENCY"</span>, </span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">style =</span> <span class="st">"quantile"</span>, </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">title =</span> <span class="st">"Dependency ratio"</span>) <span class="sc">+</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"Distribution of Dependency Ratio by planning subzone"</span>,</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="fl">1.2</span>,</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.height =</span> <span class="fl">0.45</span>, </span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.width =</span> <span class="fl">0.35</span>,</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_compass</span>(<span class="at">type=</span><span class="st">"8star"</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_scale_bar</span>() <span class="sc">+</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_grid</span>(<span class="at">alpha =</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_credits</span>(<span class="st">"Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)</span><span class="sc">\n</span><span class="st"> and Population data from Department of Statistics DOS"</span>, </span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>             <span class="at">position =</span> <span class="fu">c</span>(<span class="st">"left"</span>, <span class="st">"bottom"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Hands-on_Ex02_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 
