@@ -77,7 +77,7 @@ tmap_arrange(basemap, gdppc, asp = 1, ncol=2)
 ### 3.5.1 Computing (QUEEN) contiguity based neighbours
 
 ```{r}
-wm_q <- poly2nb(hunan, queen=TRUE)
+wm_q <- poly2nb(hunan, queen=TRUE) #wm_q is class 'nb'
 summary(wm_q)
 ```
 
@@ -542,6 +542,61 @@ tmap_arrange(gdppc, lag_gdppc, asp=1, ncol=2)
 ```
 
 ### 3.8.2 Spatial lag as a sum of neighboring values
+
+**Part 1: Obtain binary weights spatial weight matrix 'b_weights':**
+
+wm_q (aka neighbour list) is a 'nb' class containing neighbour IDs for each polygon. E.g. first three polygons has neighbours
+
+\$ : int \[1:5\] 2 3 4 57 85
+
+\$ : int \[1:5\] 1 57 58 78 85
+
+\$ : int \[1:4\] 1 4 5 85
+
+To create a binary list, we will now apply lambda function of 0\*neighbour ID + 1 ; so that if there is a neighbour, the value is 1.
+
+**Part 2: Create the standardise row matrix using nb2listw() , with glist argument = b_weights to take binary feature into account**
+
+```{r}
+b_weights <- lapply(wm_q, function(x) 0*x + 1) # class 'list'
+# [[2]]
+#[1] 1 1 1 1 1
+#[[3]]
+#[1] 1 1 1 1
+
+b_weights2 <- nb2listw(wm_q, 
+                       glist = b_weights, 
+                       style = "B")
+b_weights2 # class "listw" , "nb"
+```
+
+With the proper weights assigned, we can use lag.listw to compute a lag variable from our weight and GDPPC.
+
+```{r}
+lag_sum <- list(hunan$NAME_3, lag.listw(b_weights2, hunan$GDPPC))
+lag.res <- as.data.frame(lag_sum)
+colnames(lag.res) <- c('NAME_3', 'lag_sum GDPPC')
+```
+
+examine lag_sum (list of polygon and the sum of their neighbours' GDPPC)
+
+```{r}
+lag_sum
+```
+
+Next, we will append the *lag_sum GDPPC* field into `hunan` sf data frame by using the code chunk below.
+
+```{r}
+hunan <- left_join(hunan, lag.res)
+```
+
+Plot both the *GDPPC* and *Spatial Lag Sum GDPPC* for comparison
+
+```{r}
+gdppc <- qtm(hunan, "GDPPC")
+lag_sum_gdppc <- qtm(hunan, "lag_sum GDPPC")
+tmap_arrange(gdppc, lag_sum_gdppc, asp=1, ncol=2)
+```
 
 ### 3.8.3 Spatial window average
 
