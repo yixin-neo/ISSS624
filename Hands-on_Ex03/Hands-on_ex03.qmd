@@ -431,7 +431,7 @@ Arguments
 | `neighbours`  | an object of class `nb`                                                                                                                                                     |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `glist`       | list of general weights corresponding to neighbours                                                                                                                         |
-| `style`       | `style` can take values \"W\", \"B\", \"C\", \"U\", \"minmax\" and \"S\"                                                                                                    |
+| `style`       | `style` can take values "W", "B", "C", "U", "minmax" and "S"                                                                                                                |
 | `zero.policy` | default NULL, use global option value; if FALSE stop with error for any empty neighbour sets, if TRUE permit the weights list to be formed with zero-length weights vectors |
 
 Details
@@ -440,12 +440,11 @@ Starting from a binary neighbours list, in which regions are either listed as ne
 
 Weights to each neighboring polygon
 
--   each neighboring polygon will be assigned equal weight (style=\"W\") \<- row standardised
+-   each neighboring polygon will be assigned equal weight (style="W") \<- row standardised
 
 -   This is accomplished by assigning the fraction 1/(#ofneighbors) to each neighboring county then summing the weighted income values
 
--   drawback of this method is that polygon along the edge will base their lagged values on fewer polygons, thus over estimating the true nature of
-    spatial autocorrelation in the data. Next time can consider other more robust options are available, notably style=\"B\" \<- basic binary coding
+-   drawback of this method is that polygon along the edge will base their lagged values on fewer polygons, thus over estimating the true nature of spatial autocorrelation in the data. Next time can consider other more robust options are available, notably style="B" \<- basic binary coding
 
 ```{r}
 rswm_q <- nb2listw(wm_q, style = 'W', zero.policy = TRUE)
@@ -460,7 +459,7 @@ To see the weight of the first polygon's four neighbours type:
 rswm_q$weights[1]
 ```
 
-Explanation of above: Each neighbor is assigned a 0.2 of the total weight. This means that when R computes the average neighboring income values, each **neighbor\'s income will be multiplied by 0.2 before being tallied.**
+Explanation of above: Each neighbor is assigned a 0.2 of the total weight. This means that when R computes the average neighboring income values, each **neighbor's income will be multiplied by 0.2 before being tallied.**
 
 YX's practise (There are two variables in rswm_q, namely \$neighbours and \$ weight)
 
@@ -600,7 +599,173 @@ tmap_arrange(gdppc, lag_sum_gdppc, asp=1, ncol=2)
 
 ### 3.8.3 Spatial window average
 
+-   row-standardized weights
+
+-   includes the diagonal element
+
+Need to add the diagonal element to the neighbour structure before assigning weights. Start by using include.self to include 'k6' to a new variable before directly altering its structure to add diagonal element.
+
+```{r}
+wm_q1 <- wm_q
+```
+
+To add the diagonal element to the neighbour list, we just need to use *include.self()* from **spdep**.
+
+```{r}
+include.self(wm_q1) #look the same as wm_q1 but diff structurally
+```
+
+To obtain the row standardised weights with diagonal, use nb2listw()
+
+```{r}
+wm_q1 <- nb2listw(wm_q1)
+wm_q1
+```
+
+Create the lag variable from our weight structure and GDPPC variable.
+
+```{r}
+lag_w_avg_gpdpc <- lag.listw(wm_q1, 
+                             hunan$GDPPC)
+lag_w_avg_gpdpc
+```
+
+convert the lag variable listw object into a data.frame by using *as.data.frame()*.
+
+```{r}
+lag.list.wm_q1 <- list(hunan$NAME_3, lag.listw(wm_q1, 
+                             hunan$GDPPC))
+lag.list.wm_q1
+```
+
+```{r}
+lag_wm_q1.res <- as.data.frame(lag.list.wm_q1)
+head(lag_wm_q1.res)
+```
+
+renames the field names of *lag_wm_q1.res* object into *NAME_3* and *lag_window_avg GDPPC* respectively.
+
+```{r}
+colnames(lag_wm_q1.res) <- c("NAME_3", "lag_window_avg GDPPC")
+```
+
+Append *lag_window_avg GDPPC* values onto *hunan* sf data.frame by using *left_join()* of **dplyr** package.
+
+```{r}
+hunan <- left_join(hunan, lag_wm_q1.res)
+```
+
+*qtm()* of **tmap** package is used to plot the GDPPC and lag_window_avg GDPPC map next to each other for quick comparison.
+
+```{r}
+gdppc <- qtm(hunan, "GDPPC")
+w_avg_gdppc <- qtm(hunan, "lag_window_avg GDPPC")
+tmap_arrange(gdppc, w_avg_gdppc, asp=1, ncol=2)
+```
+
 ### 3.8.4 Spatial window sum
+
+The spatial window sum is the counter part of the window average, but
+
+-   without using row-standardized weights.
+
+-   assign binary weights to the neighbor structure that includes the diagonal element.
+
+```{r}
+wm_q2 <- wm_q
+```
+
+Add the diagonal element to the neighbour list, we just need to use *include.self()* from **spdep**.
+
+```{r}
+include.self(wm_q2)
+```
+
+```{r}
+wm_q2
+```
+
+Assigne binary weights to the neighbour structure that includes the diagonal element. (If there is a neighbour, give a value of 1)
+
+```{r}
+b_weights <- lapply(wm_q2, function(x) 0*x +1)
+b_weights[1:5]
+```
+
+use *nb2listw()* and *glist()* to explicitly assign weight values.
+
+```{r}
+b_weigths2 <- nb2listw(wm_q2,glist=b_weights, style='B')
+b_weights2
+```
+
+With our new weight structure, we can compute the lag variable with *lag.listw()*.
+
+```{r}
+w_sum_gdppc <- list(hunan$NAME_3, lag.listw(b_weights2, hunan$GDPPC))
+w_sum_gdppc
+```
+
+Convert the lag variable listw object into a data.frame by using *as.data.frame()*.
+
+Rename the field names of *w_sum_gdppc.res* object into *NAME_3* and *w_sum GDPPC* respectively.
+
+```{r}
+w_sum_gdppc.res <- as.data.frame(w_sum_gdppc)
+colnames(w_sum_gdppc.res) <- c("NAME_3", "w_sum GDPPC")
+```
+
+Append *w_sum GDPPC* values onto *hunan* sf data.frame by using *left_join()* of **dplyr** package
+
+```{r}
+hunan <- left_join(hunan, w_sum_gdppc.res)
+```
+
+Use *qtm()* of **tmap** package is used to plot the GDPPC and lag_sum GDPPC map next to each other for quick comparison
+
+```{r}
+gdppc <- qtm(hunan, "GDPPC")
+w_sum_gdppc <- qtm(hunan, "w_sum GDPPC")
+tmap_arrange(gdppc, w_sum_gdppc, asp=1, ncol=2)
+```
+
+Coords- refers to centroid coordinates
+
+Neighbour id list (Queen, rook, dist based, fix nn)
+
+-Spatial weight matrix based on inverse distance matrix (ids) nbdists () & lapply ()
+
+(distances matriz based on a neighbour id list )
+
+-row standardize matrix using rswm_q\<-nb2listw(wm_q)
+
+(equal weight)
+
+-row standardize inverse distance matrix using
+
+Rswm_ids\<-nb2listw(neighbour id list wm_q, glist= ids)
+
+-Create spatially lagged values with standardized weights for each polygon - lag.listw(rswm_q, hunan\$gdppc)
+
+-Create spatially lagged values as sum of neighbouring values
+
+-Create neighbour structure with Binary weights using b_weights\<-lapply (wm_q, function(x) 0\*x+1)
+
+-b_weights2\<-Nb2listw(wm_q, glist=b_weights) to assign weights
+
+-Createlag sum variable using lag.listw(b_weights2, hunan\$gdpcc) again
+
+-spatial window average (create neighbour structure with diagonals , standardize rows with equal weight)
+
+-wm_q1 \<-Include.self(wm_q)
+
+-Standardize row weights using nb2listw() again
+
+-Use lag.listw() again to get spatially lag variable
+
+-Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()
+
+-Spatial weights sum (without row standardized weights, assign binary weights to neighbour structure with diagonal element)
 
 ## 3.9 References
 

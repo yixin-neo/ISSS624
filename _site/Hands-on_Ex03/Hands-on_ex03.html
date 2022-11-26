@@ -1186,8 +1186,8 @@ Non-symmetric neighbours list</code></pre>
 <p>Arguments</p>
 <table class="table">
 <colgroup>
-<col style="width: 7%">
-<col style="width: 92%">
+<col style="width: 18%">
+<col style="width: 81%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -1202,7 +1202,7 @@ Non-symmetric neighbours list</code></pre>
 </tr>
 <tr class="even">
 <td><code>style</code></td>
-<td><code>style</code> can take values "W", "B", "C", "U", "minmax" and "S"</td>
+<td><code>style</code> can take values “W”, “B”, “C”, “U”, “minmax” and “S”</td>
 </tr>
 <tr class="odd">
 <td><code>zero.policy</code></td>
@@ -1214,9 +1214,9 @@ Non-symmetric neighbours list</code></pre>
 <p>Starting from a binary neighbours list, in which regions are either listed as neighbours or are absent (thus not in the set of neighbours for some definition), the function adds a weights list with values given by the coding scheme style chosen.</p>
 <p>Weights to each neighboring polygon</p>
 <ul>
-<li><p>each neighboring polygon will be assigned equal weight (style="W") &lt;- row standardised</p></li>
+<li><p>each neighboring polygon will be assigned equal weight (style=“W”) &lt;- row standardised</p></li>
 <li><p>This is accomplished by assigning the fraction 1/(#ofneighbors) to each neighboring county then summing the weighted income values</p></li>
-<li><p>drawback of this method is that polygon along the edge will base their lagged values on fewer polygons, thus over estimating the true nature of spatial autocorrelation in the data. Next time can consider other more robust options are available, notably style="B" &lt;- basic binary coding</p></li>
+<li><p>drawback of this method is that polygon along the edge will base their lagged values on fewer polygons, thus over estimating the true nature of spatial autocorrelation in the data. Next time can consider other more robust options are available, notably style=“B” &lt;- basic binary coding</p></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a>rswm_q <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(wm_q, <span class="at">style =</span> <span class="st">'W'</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
@@ -1244,7 +1244,7 @@ W 88 7744 88 37.86334 365.9147</code></pre>
 [1] 0.2 0.2 0.2 0.2 0.2</code></pre>
 </div>
 </div>
-<p>Explanation of above: Each neighbor is assigned a 0.2 of the total weight. This means that when R computes the average neighboring income values, each <strong>neighbor's income will be multiplied by 0.2 before being tallied.</strong></p>
+<p>Explanation of above: Each neighbor is assigned a 0.2 of the total weight. This means that when R computes the average neighboring income values, each <strong>neighbor’s income will be multiplied by 0.2 before being tallied.</strong></p>
 <p>YX’s practise (There are two variables in rswm_q, namely $neighbours and $ weight)</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(rswm_q)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1685,9 +1685,299 @@ B 88 7744 448 896 10224</code></pre>
 </section>
 <section id="spatial-window-average" class="level3">
 <h3 class="anchored" data-anchor-id="spatial-window-average">3.8.3 Spatial window average</h3>
+<ul>
+<li><p>row-standardized weights</p></li>
+<li><p>includes the diagonal element</p></li>
+</ul>
+<p>Need to add the diagonal element to the neighbour structure before assigning weights. Start by using include.self to include ‘k6’ to a new variable before directly altering its structure to add diagonal element.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb108"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a>wm_q1 <span class="ot">&lt;-</span> wm_q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To add the diagonal element to the neighbour list, we just need to use <em>include.self()</em> from <strong>spdep</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="fu">include.self</span>(wm_q1) <span class="co">#look the same as wm_q1 but diff structurally</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Neighbour list object:
+Number of regions: 88 
+Number of nonzero links: 536 
+Percentage nonzero weights: 6.921488 
+Average number of links: 6.090909 </code></pre>
+</div>
+</div>
+<p>To obtain the row standardised weights with diagonal, use nb2listw()</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>wm_q1 <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(wm_q1)</span>
+<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>wm_q1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Characteristics of weights list object:
+Neighbour list object:
+Number of regions: 88 
+Number of nonzero links: 448 
+Percentage nonzero weights: 5.785124 
+Average number of links: 5.090909 
+
+Weights style: W 
+Weights constants summary:
+   n   nn S0       S1       S2
+W 88 7744 88 37.86334 365.9147</code></pre>
+</div>
+</div>
+<p>Create the lag variable from our weight structure and GDPPC variable.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a>lag_w_avg_gpdpc <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(wm_q1, </span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a>                             hunan<span class="sc">$</span>GDPPC)</span>
+<span id="cb113-3"><a href="#cb113-3" aria-hidden="true" tabindex="-1"></a>lag_w_avg_gpdpc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 24847.20 22724.80 24143.25 27737.50 27270.25 21248.80 43747.00 33582.71
+ [9] 45651.17 32027.62 32671.00 20810.00 25711.50 30672.33 33457.75 31689.20
+[17] 20269.00 23901.60 25126.17 21903.43 22718.60 25918.80 20307.00 20023.80
+[25] 16576.80 18667.00 14394.67 19848.80 15516.33 20518.00 17572.00 15200.12
+[33] 18413.80 14419.33 24094.50 22019.83 12923.50 14756.00 13869.80 12296.67
+[41] 15775.17 14382.86 11566.33 13199.50 23412.00 39541.00 36186.60 16559.60
+[49] 20772.50 19471.20 19827.33 15466.80 12925.67 18577.17 14943.00 24913.00
+[57] 25093.00 24428.80 17003.00 21143.75 20435.00 17131.33 24569.75 23835.50
+[65] 26360.00 47383.40 55157.75 37058.00 21546.67 23348.67 42323.67 28938.60
+[73] 25880.80 47345.67 18711.33 29087.29 20748.29 35933.71 15439.71 29787.50
+[81] 18145.00 21617.00 29203.89 41363.67 22259.09 44939.56 16902.00 16930.00</code></pre>
+</div>
+</div>
+<p>convert the lag variable listw object into a data.frame by using <em>as.data.frame()</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>lag.list.wm_q1 <span class="ot">&lt;-</span> <span class="fu">list</span>(hunan<span class="sc">$</span>NAME_3, <span class="fu">lag.listw</span>(wm_q1, </span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>                             hunan<span class="sc">$</span>GDPPC))</span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a>lag.list.wm_q1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+ [1] "Anxiang"       "Hanshou"       "Jinshi"        "Li"           
+ [5] "Linli"         "Shimen"        "Liuyang"       "Ningxiang"    
+ [9] "Wangcheng"     "Anren"         "Guidong"       "Jiahe"        
+[13] "Linwu"         "Rucheng"       "Yizhang"       "Yongxing"     
+[17] "Zixing"        "Changning"     "Hengdong"      "Hengnan"      
+[21] "Hengshan"      "Leiyang"       "Qidong"        "Chenxi"       
+[25] "Zhongfang"     "Huitong"       "Jingzhou"      "Mayang"       
+[29] "Tongdao"       "Xinhuang"      "Xupu"          "Yuanling"     
+[33] "Zhijiang"      "Lengshuijiang" "Shuangfeng"    "Xinhua"       
+[37] "Chengbu"       "Dongan"        "Dongkou"       "Longhui"      
+[41] "Shaodong"      "Suining"       "Wugang"        "Xinning"      
+[45] "Xinshao"       "Shaoshan"      "Xiangxiang"    "Baojing"      
+[49] "Fenghuang"     "Guzhang"       "Huayuan"       "Jishou"       
+[53] "Longshan"      "Luxi"          "Yongshun"      "Anhua"        
+[57] "Nan"           "Yuanjiang"     "Jianghua"      "Lanshan"      
+[61] "Ningyuan"      "Shuangpai"     "Xintian"       "Huarong"      
+[65] "Linxiang"      "Miluo"         "Pingjiang"     "Xiangyin"     
+[69] "Cili"          "Chaling"       "Liling"        "Yanling"      
+[73] "You"           "Zhuzhou"       "Sangzhi"       "Yueyang"      
+[77] "Qiyang"        "Taojiang"      "Shaoyang"      "Lianyuan"     
+[81] "Hongjiang"     "Hengyang"      "Guiyang"       "Changsha"     
+[85] "Taoyuan"       "Xiangtan"      "Dao"           "Jiangyong"    
+
+[[2]]
+ [1] 24847.20 22724.80 24143.25 27737.50 27270.25 21248.80 43747.00 33582.71
+ [9] 45651.17 32027.62 32671.00 20810.00 25711.50 30672.33 33457.75 31689.20
+[17] 20269.00 23901.60 25126.17 21903.43 22718.60 25918.80 20307.00 20023.80
+[25] 16576.80 18667.00 14394.67 19848.80 15516.33 20518.00 17572.00 15200.12
+[33] 18413.80 14419.33 24094.50 22019.83 12923.50 14756.00 13869.80 12296.67
+[41] 15775.17 14382.86 11566.33 13199.50 23412.00 39541.00 36186.60 16559.60
+[49] 20772.50 19471.20 19827.33 15466.80 12925.67 18577.17 14943.00 24913.00
+[57] 25093.00 24428.80 17003.00 21143.75 20435.00 17131.33 24569.75 23835.50
+[65] 26360.00 47383.40 55157.75 37058.00 21546.67 23348.67 42323.67 28938.60
+[73] 25880.80 47345.67 18711.33 29087.29 20748.29 35933.71 15439.71 29787.50
+[81] 18145.00 21617.00 29203.89 41363.67 22259.09 44939.56 16902.00 16930.00</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>lag_wm_q1.res <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(lag.list.wm_q1)</span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(lag_wm_q1.res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  c..Anxiang....Hanshou....Jinshi....Li....Linli....Shimen....Liuyang...
+1                                                                Anxiang
+2                                                                Hanshou
+3                                                                 Jinshi
+4                                                                     Li
+5                                                                  Linli
+6                                                                 Shimen
+  c.24847.2..22724.8..24143.25..27737.5..27270.25..21248.8..43747..
+1                                                          24847.20
+2                                                          22724.80
+3                                                          24143.25
+4                                                          27737.50
+5                                                          27270.25
+6                                                          21248.80</code></pre>
+</div>
+</div>
+<p>renames the field names of <em>lag_wm_q1.res</em> object into <em>NAME_3</em> and <em>lag_window_avg GDPPC</em> respectively.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(lag_wm_q1.res) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"NAME_3"</span>, <span class="st">"lag_window_avg GDPPC"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Append <em>lag_window_avg GDPPC</em> values onto <em>hunan</em> sf data.frame by using <em>left_join()</em> of <strong>dplyr</strong> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>hunan <span class="ot">&lt;-</span> <span class="fu">left_join</span>(hunan, lag_wm_q1.res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining, by = "NAME_3"</code></pre>
+</div>
+</div>
+<p><em>qtm()</em> of <strong>tmap</strong> package is used to plot the GDPPC and lag_window_avg GDPPC map next to each other for quick comparison.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>gdppc <span class="ot">&lt;-</span> <span class="fu">qtm</span>(hunan, <span class="st">"GDPPC"</span>)</span>
+<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a>w_avg_gdppc <span class="ot">&lt;-</span> <span class="fu">qtm</span>(hunan, <span class="st">"lag_window_avg GDPPC"</span>)</span>
+<span id="cb122-3"><a href="#cb122-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(gdppc, w_avg_gdppc, <span class="at">asp=</span><span class="dv">1</span>, <span class="at">ncol=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Hands-on_ex03_files/figure-html/unnamed-chunk-62-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
 </section>
 <section id="spatial-window-sum" class="level3">
 <h3 class="anchored" data-anchor-id="spatial-window-sum">3.8.4 Spatial window sum</h3>
+<p>The spatial window sum is the counter part of the window average, but</p>
+<ul>
+<li><p>without using row-standardized weights.</p></li>
+<li><p>assign binary weights to the neighbor structure that includes the diagonal element.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb123"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>wm_q2 <span class="ot">&lt;-</span> wm_q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Add the diagonal element to the neighbour list, we just need to use <em>include.self()</em> from <strong>spdep</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="fu">include.self</span>(wm_q2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Neighbour list object:
+Number of regions: 88 
+Number of nonzero links: 536 
+Percentage nonzero weights: 6.921488 
+Average number of links: 6.090909 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>wm_q2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Neighbour list object:
+Number of regions: 88 
+Number of nonzero links: 448 
+Percentage nonzero weights: 5.785124 
+Average number of links: 5.090909 </code></pre>
+</div>
+</div>
+<p>Assigne binary weights to the neighbour structure that includes the diagonal element. (If there is a neighbour, give a value of 1)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>b_weights <span class="ot">&lt;-</span> <span class="fu">lapply</span>(wm_q2, <span class="cf">function</span>(x) <span class="dv">0</span><span class="sc">*</span>x <span class="sc">+</span><span class="dv">1</span>)</span>
+<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a>b_weights[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] 1 1 1 1 1
+
+[[2]]
+[1] 1 1 1 1 1
+
+[[3]]
+[1] 1 1 1 1
+
+[[4]]
+[1] 1 1 1 1
+
+[[5]]
+[1] 1 1 1 1</code></pre>
+</div>
+</div>
+<p>use <em>nb2listw()</em> and <em>glist()</em> to explicitly assign weight values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>b_weigths2 <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(wm_q2,<span class="at">glist=</span>b_weights, <span class="at">style=</span><span class="st">'B'</span>)</span>
+<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>b_weights2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Characteristics of weights list object:
+Neighbour list object:
+Number of regions: 88 
+Number of nonzero links: 448 
+Percentage nonzero weights: 5.785124 
+Average number of links: 5.090909 
+
+Weights style: B 
+Weights constants summary:
+   n   nn  S0  S1    S2
+B 88 7744 448 896 10224</code></pre>
+</div>
+</div>
+<p>With our new weight structure, we can compute the lag variable with <em>lag.listw()</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb132"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>w_sum_gdppc <span class="ot">&lt;-</span> <span class="fu">list</span>(hunan<span class="sc">$</span>NAME_3, <span class="fu">lag.listw</span>(b_weights2, hunan<span class="sc">$</span>GDPPC))</span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>w_sum_gdppc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+ [1] "Anxiang"       "Hanshou"       "Jinshi"        "Li"           
+ [5] "Linli"         "Shimen"        "Liuyang"       "Ningxiang"    
+ [9] "Wangcheng"     "Anren"         "Guidong"       "Jiahe"        
+[13] "Linwu"         "Rucheng"       "Yizhang"       "Yongxing"     
+[17] "Zixing"        "Changning"     "Hengdong"      "Hengnan"      
+[21] "Hengshan"      "Leiyang"       "Qidong"        "Chenxi"       
+[25] "Zhongfang"     "Huitong"       "Jingzhou"      "Mayang"       
+[29] "Tongdao"       "Xinhuang"      "Xupu"          "Yuanling"     
+[33] "Zhijiang"      "Lengshuijiang" "Shuangfeng"    "Xinhua"       
+[37] "Chengbu"       "Dongan"        "Dongkou"       "Longhui"      
+[41] "Shaodong"      "Suining"       "Wugang"        "Xinning"      
+[45] "Xinshao"       "Shaoshan"      "Xiangxiang"    "Baojing"      
+[49] "Fenghuang"     "Guzhang"       "Huayuan"       "Jishou"       
+[53] "Longshan"      "Luxi"          "Yongshun"      "Anhua"        
+[57] "Nan"           "Yuanjiang"     "Jianghua"      "Lanshan"      
+[61] "Ningyuan"      "Shuangpai"     "Xintian"       "Huarong"      
+[65] "Linxiang"      "Miluo"         "Pingjiang"     "Xiangyin"     
+[69] "Cili"          "Chaling"       "Liling"        "Yanling"      
+[73] "You"           "Zhuzhou"       "Sangzhi"       "Yueyang"      
+[77] "Qiyang"        "Taojiang"      "Shaoyang"      "Lianyuan"     
+[81] "Hongjiang"     "Hengyang"      "Guiyang"       "Changsha"     
+[85] "Taoyuan"       "Xiangtan"      "Dao"           "Jiangyong"    
+
+[[2]]
+ [1] 124236 113624  96573 110950 109081 106244 174988 235079 273907 256221
+[11]  98013 104050 102846  92017 133831 158446 141883 119508 150757 153324
+[21] 113593 129594 142149 100119  82884  74668  43184  99244  46549  20518
+[31] 140576 121601  92069  43258 144567 132119  51694  59024  69349  73780
+[41]  94651 100680  69398  52798 140472 118623 180933  82798  83090  97356
+[51]  59482  77334  38777 111463  74715 174391 150558 122144  68012  84575
+[61] 143045  51394  98279  47671  26360 236917 220631 185290  64640  70046
+[71] 126971 144693 129404 284074 112268 203611 145238 251536 108078 238300
+[81] 108870 108085 262835 248182 244850 404456  67608  33860</code></pre>
+</div>
+</div>
+<p>Convert the lag variable listw object into a data.frame by using <em>as.data.frame()</em>.</p>
+<p>Rename the field names of <em>w_sum_gdppc.res</em> object into <em>NAME_3</em> and <em>w_sum GDPPC</em> respectively.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb134"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>w_sum_gdppc.res <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(w_sum_gdppc)</span>
+<span id="cb134-2"><a href="#cb134-2" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(w_sum_gdppc.res) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"NAME_3"</span>, <span class="st">"w_sum GDPPC"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Append <em>w_sum GDPPC</em> values onto <em>hunan</em> sf data.frame by using <em>left_join()</em> of <strong>dplyr</strong> package</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb135"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>hunan <span class="ot">&lt;-</span> <span class="fu">left_join</span>(hunan, w_sum_gdppc.res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Joining, by = "NAME_3"</code></pre>
+</div>
+</div>
+<p>Use <em>qtm()</em> of <strong>tmap</strong> package is used to plot the GDPPC and lag_sum GDPPC map next to each other for quick comparison</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb137"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>gdppc <span class="ot">&lt;-</span> <span class="fu">qtm</span>(hunan, <span class="st">"GDPPC"</span>)</span>
+<span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a>w_sum_gdppc <span class="ot">&lt;-</span> <span class="fu">qtm</span>(hunan, <span class="st">"w_sum GDPPC"</span>)</span>
+<span id="cb137-3"><a href="#cb137-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(gdppc, w_sum_gdppc, <span class="at">asp=</span><span class="dv">1</span>, <span class="at">ncol=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Hands-on_ex03_files/figure-html/unnamed-chunk-71-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Coords- refers to centroid coordinates</p>
+<p>Neighbour id list (Queen, rook, dist based, fix nn)</p>
+<p>-Spatial weight matrix based on inverse distance matrix (ids) nbdists () &amp; lapply ()</p>
+<p>(distances matriz based on a neighbour id list )</p>
+<p>-row standardize matrix using rswm_q&lt;-nb2listw(wm_q)</p>
+<p>(equal weight)</p>
+<p>-row standardize inverse distance matrix using</p>
+<p>Rswm_ids&lt;-nb2listw(neighbour id list wm_q, glist= ids)</p>
+<p>-Create spatially lagged values with standardized weights for each polygon - lag.listw(rswm_q, hunan$gdppc)</p>
+<p>-Create spatially lagged values as sum of neighbouring values</p>
+<p>-Create neighbour structure with Binary weights using b_weights&lt;-lapply (wm_q, function(x) 0*x+1)</p>
+<p>-b_weights2&lt;-Nb2listw(wm_q, glist=b_weights) to assign weights</p>
+<p>-Createlag sum variable using lag.listw(b_weights2, hunan$gdpcc) again</p>
+<p>-spatial window average (create neighbour structure with diagonals , standardize rows with equal weight)</p>
+<p>-wm_q1 &lt;-Include.self(wm_q)</p>
+<p>-Standardize row weights using nb2listw() again</p>
+<p>-Use lag.listw() again to get spatially lag variable</p>
+<p>-Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()</p>
+<p>-Spatial weights sum (without row standardized weights, assign binary weights to neighbour structure with diagonal element)</p>
 </section>
 </section>
 <section id="references" class="level2">
