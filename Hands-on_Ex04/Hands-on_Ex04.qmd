@@ -19,6 +19,14 @@ In this hands-on exercises, I will be
 
 ## 4.2 Getting Started
 
+Recall
+
+-   wm_q is neighbour list (class = nb) \<- poly2nb() \| wm_d62 is a fixed distance weight matrix \| knn6 is an adaptive distance weight matrix \<- knn2nb( knearneigh(coords, k = 6)). We can plot the neighbours on map.
+
+-   rswm_q is equal weightage spatial matrix \<- nb2listw( nb class obj) \| rswm_ids is a weighted spatial spatial matrix using ids (inverse distance matrix, class list) \<- nb2listw(nb class obj, glist = ids, stlye='B')
+
+-   GDPPC.lag \<- a spatial lag variable that gives the averaged neighbour GDPPC value for one's neighbours \<- lag.listw( weight matrix, shapefile file \$ col)
+
 ### 4.2.1 The analytical question
 
 -   is there equal distribution of development in the province?
@@ -75,17 +83,11 @@ hunan2012 <- read_csv('data/aspatial/Hunan_2012.csv')
 ### 4.3.3 Performing relational join
 
 ```{r}
-hunan <- left_join(hunan, hunan2012)
-```
-
-```{r}
-str(hunan)
-```
-
-```{r}
- hunan %>% 
+hunan <- left_join(hunan, hunan2012) %>% 
   select(1:4, 7, 15)
 ```
+
+Joined by 'County', selected only columns NAME_2, ID_3, NAME_3, ENGTYPE_3, County, GDPPC, geometry is automatically included as last variable
 
 ### 4.3.4 Visualising Regional Development Indicator
 
@@ -99,39 +101,235 @@ equal <- tm_shape(hunan)+
           n=5,
           style='equal') +
   tm_borders(alpha=0.5) +
-  tm_layout(main.title = 'Equal interval classification')
+  tm_layout(main.title = 'Equal interval classification',
+            main.title.size=0.8,
+            legend.height = 0.2,
+            legend.width = 0.2)
 
 quantile <- tm_shape(hunan)+
   tm_fill('GDPPC',
           n=5,
           style='quantile') +
   tm_borders(alpha=0.5) +
-  tm_layout(main.title = 'Equal quantile classification')
+  tm_layout(main.title = 'Equal quantile classification',
+            main.title.size=0.8,
+            legend.height = 0.2,
+            legend.width = 0.2)
 
+tmap_arrange(equal, quantile, asp =1, ncol=2)
 
 ```
 
 ## 4.4 Global Spatial Autocorrelation
 
+-   compute **global** spatial autocorrelation statistics
+
+-   perform spatial complete randomness test for global spatial autocorrelation.
+
 ### 4.4.1 Computing Contiguity Spatial Weights
+
+-   Construct a spatial weights of study area using poly2nb() of the spdep package. This builds a neighbour list using contiguous boundaries.
+
+```{r}
+wm_q <- poly2nb(hunan, queen=TRUE)
+summary(wm_q)
+```
+
+The summary report above shows that there are 88 area units in Hunan. The most connected area unit has 11 neighbours. There are two area units with only one neighbours.
 
 ### 4.4.2 Row-standardised weights matrix
 
+This is one of the ways to assign weights to each neighboring polygon. Each neighbouring polygons will be assigned to equal weight (style = "W"). A fraction of (1/ #neighbours) will be assigned to each neighbouring country, then summing up the weighted GDPPC values.
+
+This is an intuitive way to summarise neighbours' values, but the drawback is that polygon along the edges have less neighbours and thus we might over or under estimate the true nature of the spatial autocorrelation in the data. Note that more robust option are available, notably style ="B" of the nb2listw() function.
+
+```{r}
+rswm_q <- nb2listw(wm_q,
+                   style = "W",
+                   zero.policy=TRUE)
+rswm_q
+```
+
+The input of *nb2listw()* must be an object of class **nb**. The syntax of the function has two major arguments, namely style and zero.poly.
+
+-   *style* can take values \"W\", \"B\", \"C\", \"U\", \"minmax\" and \"S\". B is the basic binary coding, W is row standardised (sums over all links to n), C is globally standardised (sums over all links to n), U is equal to C divided by the number of neighbours (sums over all links to unity), while S is the variance-stabilizing coding scheme proposed by Tiefelsdorf et al. 1999, p. 167-168 (sums over all links to n).
+
+-   If *zero policy* is set to TRUE, weights vectors of zero length are inserted for regions without neighbour in the neighbours list. These will in turn generate lag values of zero, equivalent to the sum of products of the zero row t(rep(0, length=length(neighbours))) %\*% x, for arbitrary numerical vector x of length length(neighbours). The spatially lagged value of x for the zero-neighbour region will then be zero, which may (or may not) be a sensible choice.
+
 ### 4.4.3 Global Spatial Autocorrelation: Moran's I
 
-### 4.4.4 Maron's I test
+In this section, I will perform Moran\'s I statistics testing by using [*moran.test()*](https://r-spatial.github.io/spdep/reference/moran.test.html) of **spdep**.
+
+### 4.4.4 Moran's I test
+
+"na.omit() returns the object with incomplete cases removed"
+
+```{r}
+moran.test(hunan$GDPPC,
+           listw=rswm_q,
+           zero.policy=TRUE,
+           na.action=na.omit)
+```
+
+**Null hypothesis**: The data observations are randomised.
+
+**Alternative hypothesis:** The data observations are not randomised (etc, clustering or deviations are observed between some observations)
+
+The Moran's I statistic value is **positive**, it implies that some clustering is observed.
+
+**At a p-value of less than 0.05, we have enough statistical evidence to reject the null hypothesis and conclude that some of the observation are not randomly distributed.**
 
 #### 4.4.4.1 Computing Monte Carlo Moran's I
 
+The code chunk below performs permutation test for Moran\'s I statistic by using [*moran.mc()*](https://r-spatial.github.io/spdep/reference/moran.mc.html) of **spdep**. A total of 1000 simulation will be performed. When there is uncertainty in the data (data changes every week), we use Monte Carlo simulation (rand(), randbetween(), poisson(), depending on understanding of data), to generate 1000 random values)
+
+\* simulation starts from '1', to get 1000 simulations, we start at 1 and end with 999 (inclusive)
+
+```{r}
+set.seed(1234)
+
+bperm = moran.mc(hunan$GDPPC,
+                 listw=rswm_q,
+                 nsim=999,
+                 zero.policy= TRUE,
+                 na.action=na.omit)
+
+bperm
+```
+
+With a Moran I value of 0.30075 (positive means clustering, 0 means random, neg means deviation) , and a p value of less than 0.05 (statisfically significant), there are signs of clustering in the GDPPC in Hunan in some regions.
+
 #### 4.4.4.2 Visualising Monte Carlo Moran's I
+
+It is always a good practice for us the examine the simulated Moran\'s I test statistics in greater detail. This can be achieved by plotting the distribution of the statistical values as a histogram by using the code chunk below.
+
+In the code chunk below [*hist()*](https://www.rdocumentation.org/packages/graphics/versions/3.6.2/topics/hist) and [*abline()*](https://www.rdocumentation.org/packages/graphics/versions/3.6.2/topics/abline) of R Graphics are used.
+
+```{r}
+str(bperm)
+```
+
+```{r}
+class(bperm)
+```
+
+Are these Moran's I statistic values generated?
+
+```{r}
+head(bperm$res)
+```
+
+```{r}
+mean(bperm$res[1:999])
+```
+
+```{r}
+var(bperm$res[1:999])
+```
+
+```{r}
+summary(bperm$res[1:999])
+```
+
+[Plot histogram]{.underline}
+**breaks:** number of histogram cells
+
+**freq:** logical; if **`TRUE`**, the histogram graphic is a representation of frequencies, the **`counts`** component of the result; if **`FALSE`**, probability densities, component **`density`**, are plotted (so that the histogram has a total area of one). Defaults to **`TRUE`** *if and only if* **`breaks`** are equidistant (and **`probability`** is not specified).
+
+```{r}
+hist(bperm$res,
+     freq=TRUE,
+     breaks= 20,
+     xlab= "Simulated Moran's I"
+     )
+abline(v = 0, col="red")
+```
+
+Conclusion: Moran I value obtained earlier was 0.30075, it is likely to be more extreme than the critical value, which means highly likely that my dataset is very different from the null hypothesis.
+
+Challenge: Plot histogram using ggplot2 instead
+
+```{r}
+library(ggplot2)
+bperm.df <- as.data.frame(bperm$res)
+colnames(bperm.df)[1] <- 'res'
+
+c <- ggplot(bperm.df, aes(res))
+
+c +
+  geom_histogram(boundary = 0,
+                 colour = 'black',
+                 binwidth =0.02,
+                 alpha= 0.5) +
+  geom_vline(xintercept=0,
+             colour = 'red') +
+  labs(title = "Histogram of Moran's I",
+       x = "Simulated Moran' I ")
+  
+```
 
 ### 4.4.5 Global Spatial Autocorrelation: Geary's
 
+In this section, you will learn how to perform Geary\'s c statistics testing by using appropriate functions of **spdep** package.
+
 #### 4.4.5.1 Geary's C test
+
+Geary\'s C test for spatial autocorrelation by using [*geary.test()*](https://r-spatial.github.io/spdep/reference/geary.test.html) of **spdep**.
+
+```{r}
+geary.test(hunan$GDPPC, listw=rswm_q)
+```
+
+**Null hypothesis**: The data observations are randomised.
+
+**Alternative hypothesis:** The data observations are not randomised (etc, clustering or deviations are observed between some observations)
+
+The Geary's C statistic value (=0.6907223) is **between 0 and 1**, it implies that some clustering is observed.
+
+1 means completely random, 1-3 means deviations
+
+**At a p-value of less than 0.05, we have enough statistical evidence to reject the null hypothesis and conclude that some of the observation are not randomly distributed.**
 
 #### 4.4.5.2 Computing Monte Carlo Geary's C
 
+The code chunk below performs permutation test for Geary\'s C statistic by using [*geary.mc()*](https://r-spatial.github.io/spdep/reference/geary.mc.html) of **spdep**.
+
+```{r}
+set.seed(1234)
+bpermg = geary.mc(hunan$GDPPC,
+                  listw=rswm_q,
+                  nsim=999)
+bpermg
+```
+
+Same statistical conclusion as above.
+
 #### 4.4.5.3 Visualising the Monte Carlo Geary's C
+
+Plot a histogram to reveal the distribution of the simulated values
+
+```{r}
+mean(bpermg$res[1:999])
+```
+
+```{r}
+var(bpermg$res[1:999])
+```
+
+```{r}
+summary(bpermg$res[1:999])
+```
+
+```{r}
+hist(bpermg$res,
+     freq= TRUE,
+     breaks=20,
+     xlab='Simulated Geary C')
+
+abline(v=1, col='red')
+```
+
+For Geary C, 1 means close to randomness. With a Geary C statistic value of 0.6907223, it is highly likely for this value to be more extreme than critical value on the left side. It means high chance we can reject the null hypthesis that the spatial observations are completely in random manner.
 
 ## 4.5 Spatial Correlogram
 
