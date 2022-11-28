@@ -154,8 +154,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  <span class="dropdown-text">Hands-on Exercise 2</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_ex03.html">
+    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_Ex03.html">
  <span class="dropdown-text">Hands-on Exercise 3</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Hands-on_Ex04/Hands-on_Ex04.html">
+ <span class="dropdown-text">Hands-on Exercise 4</span></a>
   </li>  
     </ul>
   </li>
@@ -200,6 +204,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#map-layouts" id="toc-map-layouts" class="nav-link" data-scroll-target="#map-layouts">2.4.5 Map Layouts</a></li>
   <li><a href="#drawing-small-multiple-choropleth-maps" id="toc-drawing-small-multiple-choropleth-maps" class="nav-link" data-scroll-target="#drawing-small-multiple-choropleth-maps">2.4.6 Drawing Small Multiple Choropleth Maps</a></li>
   <li><a href="#mappping-spatial-object-meeting-a-selection-criterion" id="toc-mappping-spatial-object-meeting-a-selection-criterion" class="nav-link" data-scroll-target="#mappping-spatial-object-meeting-a-selection-criterion">2.4.7 Mappping Spatial Object Meeting a Selection Criterion</a></li>
+  <li><a href="#tmap-summary" id="toc-tmap-summary" class="nav-link" data-scroll-target="#tmap-summary">2.4.8. Tmap summary</a></li>
   </ul></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">2.5 Reference</a>
   <ul class="collapse">
@@ -1006,6 +1011,22 @@ Please use legend.outside.size to control the width of the outside legend</code>
 <p><img src="Hands-on_Ex02_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+</section>
+<section id="tmap-summary" class="level3">
+<h3 class="anchored" data-anchor-id="tmap-summary">2.4.8. Tmap summary</h3>
+<p>From chap 2, using <strong>tmap package</strong> to plot</p>
+<p>1. tm_shape+ tm_polygon</p>
+<p>2. tm_shape+ tm_fill + tm_borders _ tm_layout</p>
+<p>3. qtm</p>
+<p>Chap 2: To plot <strong>small multiple</strong> chloroplath maps via <strong>qtm or tmap element</strong>s:</p>
+<p>1. Add multiple values to tm_polygon or tm_fill</p>
+<p>2. Tm_facets</p>
+<p>3. Tm_arrange</p>
+<p>Chap 3: To plot <strong>small multiple</strong> layered chloroplath maps via <strong>plot() method</strong>:</p>
+<p>&nbsp;4. To arrange the maps via plot(),</p>
+<p>par(mfrow=c(2,2)) &lt;- 2x2 layout</p>
+<p>From chap 3: to <strong>add layers</strong> to a plot</p>
+<p>1. just keep repeating plot(weight matrix ,coords,add=TRUE)</p>
 <p>https://rstudio-pubs-static.s3.amazonaws.com/730482_d7889d9c65c8422f843b3d4e0196633c.html</p>
 </section>
 </section>

@@ -564,6 +564,34 @@ tm_shape(mpsz_pop2020[mpsz_pop2020$REGION_N == "CENTRAL REGION",]) +
   tm_borders(alpha = 0.5)
 ```
 
+### 2.4.8. Tmap summary
+
+From chap 2, using **tmap package** to plot
+
+1\. tm_shape+ tm_polygon
+
+2\. tm_shape+ tm_fill + tm_borders \_ tm_layout
+
+3\. qtm
+
+Chap 2: To plot **small multiple** chloroplath maps via **qtm or tmap element**s:
+
+1\. Add multiple values to tm_polygon or tm_fill
+
+2\. Tm_facets
+
+3\. Tm_arrange
+
+Chap 3: To plot **small multiple** layered chloroplath maps via **plot() method**:
+
+ 4. To arrange the maps via plot(),
+
+par(mfrow=c(2,2)) \<- 2x2 layout
+
+From chap 3: to **add layers** to a plot
+
+1\. just keep repeating plot(weight matrix ,coords,add=TRUE)
+
 https://rstudio-pubs-static.s3.amazonaws.com/730482_d7889d9c65c8422f843b3d4e0196633c.html
 
 ## 2.5 Reference

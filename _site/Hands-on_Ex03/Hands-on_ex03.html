@@ -154,8 +154,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  <span class="dropdown-text">Hands-on Exercise 2</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_ex03.html">
+    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_Ex03.html">
  <span class="dropdown-text">Hands-on Exercise 3</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../Hands-on_Ex04/Hands-on_Ex04.html">
+ <span class="dropdown-text">Hands-on Exercise 4</span></a>
   </li>  
     </ul>
   </li>
@@ -1959,25 +1963,26 @@ B 88 7744 448 896 10224</code></pre>
 <p><img src="Hands-on_ex03_files/figure-html/unnamed-chunk-71-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Coords- refers to centroid coordinates</p>
-<p>Neighbour id list (Queen, rook, dist based, fix nn)</p>
-<p>-Spatial weight matrix based on inverse distance matrix (ids) nbdists () &amp; lapply ()</p>
-<p>(distances matriz based on a neighbour id list )</p>
-<p>-row standardize matrix using rswm_q&lt;-nb2listw(wm_q)</p>
-<p>(equal weight)</p>
-<p>-row standardize inverse distance matrix using</p>
-<p>Rswm_ids&lt;-nb2listw(neighbour id list wm_q, glist= ids)</p>
-<p>-Create spatially lagged values with standardized weights for each polygon - lag.listw(rswm_q, hunan$gdppc)</p>
-<p>-Create spatially lagged values as sum of neighbouring values</p>
-<p>-Create neighbour structure with Binary weights using b_weights&lt;-lapply (wm_q, function(x) 0*x+1)</p>
-<p>-b_weights2&lt;-Nb2listw(wm_q, glist=b_weights) to assign weights</p>
-<p>-Createlag sum variable using lag.listw(b_weights2, hunan$gdpcc) again</p>
-<p>-spatial window average (create neighbour structure with diagonals , standardize rows with equal weight)</p>
-<p>-wm_q1 &lt;-Include.self(wm_q)</p>
-<p>-Standardize row weights using nb2listw() again</p>
-<p>-Use lag.listw() again to get spatially lag variable</p>
-<p>-Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()</p>
-<p>-Spatial weights sum (without row standardized weights, assign binary weights to neighbour structure with diagonal element)</p>
+<p>1. Coords- refers to coordinates (x,y) of centroid’s CG</p>
+<p>2. Neighbour id list (Queen, rook, dist based, fix nn)</p>
+<p>3. Spatial weight matrix based on inverse distance matrix (ids) nbdists () &amp; lapply () , based on a neighbour id list</p>
+<p>4.1. Row standardize matrix using rswm_q&lt;-nb2listw(wm_q) (equal weight for each neighbour)</p>
+<p>4.2. Row standardize inverse distance matrix using Rswm_ids&lt;-nb2listw(neighbour id list wm_q, glist= ids)</p>
+<p>5.1 Create spatially lagged values with standardized weights for each polygon - lag.listw(rswm_q, hunan$gdppc) (Usually standardised rows (for find ave spatial lagged variables) for Queen/Rook methods)</p>
+<p>5.2. Create spatially lagged values as SUM of neighbouring values</p>
+<ul>
+<li><p>Create neighbour structure with Binary weights using b_weights&lt;-lapply (wm_q, function(x) 0*x+1)</p></li>
+<li><p>b_weights2&lt;-Nb2listw(wm_q, glist=b_weights) to assign weights</p></li>
+<li><p>Create lag sum variable (a calculated variable for each polygons’s gdppc neighbour sum) using lag.listw(b_weights2, hunan$gdpcc) again</p></li>
+</ul>
+<p>5.3. Spatial Window AVERAGE (create neighbour structure with diagonals , standardize rows with equal weight)</p>
+<ul>
+<li><p>wm_q1 &lt;-Include.self(wm_q)</p></li>
+<li><p>Standardize row weights using nb2listw() again</p></li>
+<li><p>Use lag.listw() again to get spatially lag variable</p></li>
+<li><p>Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()</p></li>
+</ul>
+<p>5.4. Spatial Weights SUM (without row standardized weights, assign binary weights to neighbour structure with diagonal element)</p>
 </section>
 </section>
 <section id="references" class="level2">

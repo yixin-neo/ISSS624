@@ -1,0 +1,186 @@
+---
+title: "Hands-on_Ex04"
+editor: visual
+---
+
+In this hands-on exercises, I will be
+
+1\. computing Global (GSA) by using spdep package.
+
+-   plot Moran Scatterplot
+
+-   compute and plot spatial correlogram
+
+2\. computing Local measure of Spatial Autocorrelation (LISA) to detect clusters and outliers by using spdep packages
+
+3\. computing Getis-Ord's Gi-statistics for detecting hot spot or/ and cold spot area by using spdep package
+
+4\. visualising the analysis output by using tmap package
+
+## 4.2 Getting Started
+
+### 4.2.1 The analytical question
+
+-   is there equal distribution of development in the province?
+
+-   if answer is NO, we ask "is there sign of clustering?" (GLOBAL spatial autocorrelation)
+
+-   if YES, "Where are the clusters" (LOCAL spatial autocorrelation)
+
+In this case study, we are interested to examine the spatial pattern of a selected development indicator (i.e. GDP per capita) of Hunan Provice, People Republic of China.
+
+### 4.2.2 The Study Area and Data
+
+Two data sets will be used in this hands-on exercise:
+
+1.  geospatial data: Hunan province administrative boundary layer at county level in ESRI shapefile format
+2.  aspatial data: Hunan_2012.csv containing local development indicators
+
+### 4.2.3 Setting the Analytical Tools
+
+Packages we need:
+
+-   sf is use for importing and handling geospatial data in R,
+
+-   tidyverse is mainly use for wrangling attribute data in R,
+
+-   spdep will be used to compute spatial weights, global and local spatial autocorrelation statistics, and
+
+-   tmap will be used to prepare cartographic quality chropleth map.
+
+```{r}
+library(sf)
+library(spdep)
+library(tmap)
+library(tidyverse)
+```
+
+## 4.3 Getting the Data Into R Environment
+
+### 4.3.1 Import shapefile into r environment
+
+```{r}
+hunan <-st_read(dsn='data/geospatial',
+                layer= 'Hunan')
+```
+
+\*data is in WSG84 format, not projected yet. If we are going to extract the data, better not to st_transform() to project coordinate system first.
+
+### 4.3.2 Import csv file into r environment
+
+```{r}
+hunan2012 <- read_csv('data/aspatial/Hunan_2012.csv')
+```
+
+### 4.3.3 Performing relational join
+
+```{r}
+hunan <- left_join(hunan, hunan2012)
+```
+
+```{r}
+str(hunan)
+```
+
+```{r}
+ hunan %>% 
+  select(1:4, 7, 15)
+```
+
+### 4.3.4 Visualising Regional Development Indicator
+
+Now we will prepare basemap and a choropleth map showing the distribution of GDPPC 2012 by using qtm() of tmap package
+
+\*tm_fill() 's n refer to the number of equal intervals
+
+```{r}
+equal <- tm_shape(hunan)+
+  tm_fill('GDPPC',
+          n=5,
+          style='equal') +
+  tm_borders(alpha=0.5) +
+  tm_layout(main.title = 'Equal interval classification')
+
+quantile <- tm_shape(hunan)+
+  tm_fill('GDPPC',
+          n=5,
+          style='quantile') +
+  tm_borders(alpha=0.5) +
+  tm_layout(main.title = 'Equal quantile classification')
+
+
+```
+
+## 4.4 Global Spatial Autocorrelation
+
+### 4.4.1 Computing Contiguity Spatial Weights
+
+### 4.4.2 Row-standardised weights matrix
+
+### 4.4.3 Global Spatial Autocorrelation: Moran's I
+
+### 4.4.4 Maron's I test
+
+#### 4.4.4.1 Computing Monte Carlo Moran's I
+
+#### 4.4.4.2 Visualising Monte Carlo Moran's I
+
+### 4.4.5 Global Spatial Autocorrelation: Geary's
+
+#### 4.4.5.1 Geary's C test
+
+#### 4.4.5.2 Computing Monte Carlo Geary's C
+
+#### 4.4.5.3 Visualising the Monte Carlo Geary's C
+
+## 4.5 Spatial Correlogram
+
+### 4.5.1 Compute Moran's I correlogram
+
+### 4.5.2 Compute Geary's C correlogram and plot
+
+## 4.6 Cluster and Outlier Analysis
+
+### 4.6.1 Computing local Moran's I
+
+#### 4.6.1.1 Mapping the local Moran's I
+
+#### 4.6.1.2 Mapping local Moran's I values
+
+#### 4.6.1.3 Mapping local Moran's I p-values
+
+#### 4.6.1.4 Mapping both local Moran's I values and p-values
+
+## 4.7 Creating a LISA Cluster Map
+
+### 4.7.1 Plotting Moran scatterplot
+
+### 4.7.2 Plotting Moran scatterplot with standardised variable
+
+### 4.7.3 Preparing LISA map classes
+
+### 4.7.4 Plotting LISA map
+
+## 4.8 Hot Spot and Cold Spot Area Analysis
+
+### 4.8.1 Getis and Ord's G-Statistics
+
+### 4.8.2 Deriving distance-based weight matrix
+
+#### 4.8.2.1 Deriving the centroid
+
+#### 4.8.2.2 Determine the cut-off distance
+
+#### 4.8.2.3 Computing fixed distance weight matrix
+
+### 4.8.3 Computing adaptive distance weight matrix
+
+## 4.9 Computing Gi statistics
+
+### 4.9.1 Gi statistics using fixed distance
+
+### 4.9.2 Mapping Gi values with fixed distance weights
+
+### 4.9.3 Gi statistics using adaptive distance
+
+### 4.9.4 Mapping Gi values with adaptive distance weights

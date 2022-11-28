@@ -429,7 +429,7 @@ Use the [nb2listw()](https://search.r-project.org/CRAN/refmans/spdep/html/nb2lis
 Arguments
 
 | `neighbours`  | an object of class `nb`                                                                                                                                                     |
-|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|-----------------------------------------------------------|
 | `glist`       | list of general weights corresponding to neighbours                                                                                                                         |
 | `style`       | `style` can take values "W", "B", "C", "U", "minmax" and "S"                                                                                                                |
 | `zero.policy` | default NULL, use global option value; if FALSE stop with error for any empty neighbour sets, if TRUE permit the weights list to be formed with zero-length weights vectors |
@@ -729,43 +729,37 @@ w_sum_gdppc <- qtm(hunan, "w_sum GDPPC")
 tmap_arrange(gdppc, w_sum_gdppc, asp=1, ncol=2)
 ```
 
-Coords- refers to centroid coordinates
+1\. Coords- refers to coordinates (x,y) of centroid's CG
 
-Neighbour id list (Queen, rook, dist based, fix nn)
+2\. Neighbour id list (Queen, rook, dist based, fix nn)
 
--Spatial weight matrix based on inverse distance matrix (ids) nbdists () & lapply ()
+3\. Spatial weight matrix based on inverse distance matrix (ids) nbdists () & lapply () , based on a neighbour id list
 
-(distances matriz based on a neighbour id list )
+4.1. Row standardize matrix using rswm_q\<-nb2listw(wm_q) (equal weight for each neighbour)
 
--row standardize matrix using rswm_q\<-nb2listw(wm_q)
+4.2. Row standardize inverse distance matrix using Rswm_ids\<-nb2listw(neighbour id list wm_q, glist= ids)
 
-(equal weight)
+5.1 Create spatially lagged values with standardized weights for each polygon - lag.listw(rswm_q, hunan\$gdppc) (Usually standardised rows (for find ave spatial lagged variables) for Queen/Rook methods)
 
--row standardize inverse distance matrix using
+5.2. Create spatially lagged values as SUM of neighbouring values
 
-Rswm_ids\<-nb2listw(neighbour id list wm_q, glist= ids)
+-   Create neighbour structure with Binary weights using b_weights\<-lapply (wm_q, function(x) 0\*x+1)
 
--Create spatially lagged values with standardized weights for each polygon - lag.listw(rswm_q, hunan\$gdppc)
+-   b_weights2\<-Nb2listw(wm_q, glist=b_weights) to assign weights
 
--Create spatially lagged values as sum of neighbouring values
+-   Create lag sum variable (a calculated variable for each polygons's gdppc neighbour sum) using lag.listw(b_weights2, hunan\$gdpcc) again
 
--Create neighbour structure with Binary weights using b_weights\<-lapply (wm_q, function(x) 0\*x+1)
+5.3. Spatial Window AVERAGE (create neighbour structure with diagonals , standardize rows with equal weight)
 
--b_weights2\<-Nb2listw(wm_q, glist=b_weights) to assign weights
+-   wm_q1 \<-Include.self(wm_q)
 
--Createlag sum variable using lag.listw(b_weights2, hunan\$gdpcc) again
+-   Standardize row weights using nb2listw() again
 
--spatial window average (create neighbour structure with diagonals , standardize rows with equal weight)
+-   Use lag.listw() again to get spatially lag variable
 
--wm_q1 \<-Include.self(wm_q)
+-   Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()
 
--Standardize row weights using nb2listw() again
-
--Use lag.listw() again to get spatially lag variable
-
--Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()
-
--Spatial weights sum (without row standardized weights, assign binary weights to neighbour structure with diagonal element)
+5.4. Spatial Weights SUM (without row standardized weights, assign binary weights to neighbour structure with diagonal element)
 
 ## 3.9 References
 
