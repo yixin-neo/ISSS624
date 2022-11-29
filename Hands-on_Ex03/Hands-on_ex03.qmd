@@ -614,7 +614,7 @@ wm_q1 <- wm_q
 IF we want to add the diagonal element to the neighbour list, we just need to use *include.self()* from **spdep**. Use this instead to overwrite: wm_q1 \<- include.self(wm_q1)
 
 ```{r}
-include.self(wm_q1) #look the same as wm_q1 but diff structurally
+wm_q1 <- include.self(wm_q1) #look the same as wm_q1 but diff structurally
 ```
 
 To obtain the row standardised weights with diagonal, use nb2listw()
@@ -680,14 +680,14 @@ wm_q2 <- wm_q
 Add the diagonal element to the neighbour list, we just need to use *include.self()* from **spdep**.
 
 ```{r}
-include.self(wm_q2)
+wm_q2 <- include.self(wm_q2)
 ```
 
 ```{r}
-wm_q2
+summary(wm_q2)
 ```
 
-Assigne binary weights to the neighbour structure that includes the diagonal element. (If there is a neighbour, give a value of 1)
+Assign binary weights to the neighbour structure that includes the diagonal element. (If there is a neighbour, give a value of 1)
 
 ```{r}
 b_weights <- lapply(wm_q2, function(x) 0*x +1)
