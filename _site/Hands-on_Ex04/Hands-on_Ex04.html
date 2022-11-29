@@ -210,6 +210,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#spatial-correlogram" id="toc-spatial-correlogram" class="nav-link" data-scroll-target="#spatial-correlogram">4.5 Spatial Correlogram</a>
   <ul class="collapse">
   <li><a href="#compute-morans-i-correlogram" id="toc-compute-morans-i-correlogram" class="nav-link" data-scroll-target="#compute-morans-i-correlogram">4.5.1 Compute Moran’s I correlogram</a></li>
+  </ul></li>
+  <li><a href="#spatial-correlogram-1" id="toc-spatial-correlogram-1" class="nav-link" data-scroll-target="#spatial-correlogram-1"><strong>Spatial correlogram</strong></a>
+  <ul class="collapse">
+  <li><a href="#arguments" id="toc-arguments" class="nav-link" data-scroll-target="#arguments"><strong>Arguments</strong></a>
+  <ul class="collapse">
   <li><a href="#compute-gearys-c-correlogram-and-plot" id="toc-compute-gearys-c-correlogram-and-plot" class="nav-link" data-scroll-target="#compute-gearys-c-correlogram-and-plot">4.5.2 Compute Geary’s C correlogram and plot</a></li>
   </ul></li>
   <li><a href="#cluster-and-outlier-analysis" id="toc-cluster-and-outlier-analysis" class="nav-link" data-scroll-target="#cluster-and-outlier-analysis">4.6 Cluster and Outlier Analysis</a>
@@ -235,6 +240,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#mapping-gi-values-with-fixed-distance-weights" id="toc-mapping-gi-values-with-fixed-distance-weights" class="nav-link" data-scroll-target="#mapping-gi-values-with-fixed-distance-weights">4.9.2 Mapping Gi values with fixed distance weights</a></li>
   <li><a href="#gi-statistics-using-adaptive-distance" id="toc-gi-statistics-using-adaptive-distance" class="nav-link" data-scroll-target="#gi-statistics-using-adaptive-distance">4.9.3 Gi statistics using adaptive distance</a></li>
   <li><a href="#mapping-gi-values-with-adaptive-distance-weights" id="toc-mapping-gi-values-with-adaptive-distance-weights" class="nav-link" data-scroll-target="#mapping-gi-values-with-adaptive-distance-weights">4.9.4 Mapping Gi values with adaptive distance weights</a></li>
+  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -272,7 +278,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Recall</p>
 <ul>
 <li><p>wm_q is neighbour list (class = nb) &lt;- poly2nb() | wm_d62 is a fixed distance weight matrix | knn6 is an adaptive distance weight matrix &lt;- knn2nb( knearneigh(coords, k = 6)). We can plot the neighbours on map.</p></li>
-<li><p>rswm_q is equal weightage spatial matrix &lt;- nb2listw( nb class obj) | rswm_ids is a weighted spatial spatial matrix using ids (inverse distance matrix, class list) &lt;- nb2listw(nb class obj, glist = ids, stlye=‘B’)</p></li>
+<li><p>rswm_q is equal weightage spatial matrix &lt;- nb2listw( nb class obj) | rswm_ids is a weighted spatial spatial matrix using ids (inverse distance matrix, class list) &lt;- nb2listw(nb class obj, glist = ids, style=‘B’)</p></li>
 <li><p>GDPPC.lag &lt;- a spatial lag variable that gives the averaged neighbour GDPPC value for one’s neighbours &lt;- lag.listw( weight matrix, shapefile file $ col)</p></li>
 </ul>
 <section id="the-analytical-question" class="level3">
@@ -718,11 +724,119 @@ alternative hypothesis: greater</code></pre>
 </section>
 <section id="spatial-correlogram" class="level2">
 <h2 class="anchored" data-anchor-id="spatial-correlogram">4.5 Spatial Correlogram</h2>
+<p><strong>Spatial correlograms</strong> are great to examine patterns of <strong>spatial autocorrelation</strong> in your data or model residuals. They show how correlated are pairs of spatial observations when you increase the distance (lag) between them - they are plots of some index of autocorrelation (Moran's I or Geary's c) against distance. Although correlograms are not as fundamental as variograms (a keystone concept of geostatistics), they are very useful as an <strong>exploratory</strong> and <strong>descriptive</strong> tool. For this purpose they actually provide richer information than variograms.</p>
 <section id="compute-morans-i-correlogram" class="level3">
 <h3 class="anchored" data-anchor-id="compute-morans-i-correlogram">4.5.1 Compute Moran’s I correlogram</h3>
+<ul>
+<li>to compute 6-lag spatial correlogram of GDPPC, use the sp.correlogram() of the spdep package.</li>
+</ul>
 </section>
+</section>
+<section id="spatial-correlogram-1" class="level1">
+<h1><strong>Spatial correlogram</strong></h1>
+<p>Spatial correlograms for <strong>Moran’s I</strong> and the <strong>autocorrelation coefficient</strong>, with print and plot helper functions.</p>
+<pre><code>sp.correlogram(neighbours, var, order = 1, method = "corr",
+ style = "W", randomisation = TRUE, zero.policy = NULL, spChk=NULL)
+# S3 method for spcor
+plot(x, main, ylab, ylim, ...)
+# S3 method for spcor
+print(x, p.adj.method="none", ...)</code></pre>
+<section id="arguments" class="level2">
+<h2 class="anchored" data-anchor-id="arguments"><strong>Arguments</strong></h2>
+<dl>
+<dt><strong>neighbours</strong></dt>
+<dd>
+<p>an object of class <code>nb</code></p>
+</dd>
+<dt><strong>var</strong></dt>
+<dd>
+<p>a numeric vector</p>
+</dd>
+<dt><strong>order</strong></dt>
+<dd>
+<p>maximum lag order</p>
+</dd>
+<dt><strong>method</strong></dt>
+<dd>
+<p>“corr” for correlation, “I” for Moran’s I, “C” for Geary’s C</p>
+</dd>
+<dt><strong>style</strong></dt>
+<dd>
+<p><code>style</code> can take values W, B, C, and S</p>
+</dd>
+<dt><strong>randomisation</strong></dt>
+<dd>
+<p>variance of I or C calculated under the assumption of randomisation, if FALSE normality</p>
+</dd>
+<dt><strong>zero.policy</strong></dt>
+<dd>
+<p>default NULL, use global option value; if FALSE stop with error for any empty neighbour sets, if TRUE permit the weights list to be formed with zero-length weights vectors</p>
+</dd>
+</dl>
+<p>Refer to lecture notes on ORDER, order 1 means first layer of neighbours using the contiguity / boundary method. We want to check how the Moran’s I method changes as the neighbours get further and further away.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>MI_corr <span class="ot">&lt;-</span> <span class="fu">sp.correlogram</span>(wm_q, </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>                          hunan<span class="sc">$</span>GDPPC,</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">order =</span><span class="dv">6</span> ,</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">method =</span> <span class="st">"I"</span>,</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">style =</span> <span class="st">"W"</span>)</span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(MI_corr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Hands-on_Ex04_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Based on the plot above, not all autocorrelation values might be statistically significant, thus its important to print the analysis results as shown below:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(MI_corr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Spatial correlogram for hunan$GDPPC 
+method: Moran's I
+         estimate expectation   variance standard deviate Pr(I) two sided    
+1 (88)  0.3007500  -0.0114943  0.0043484           4.7351       2.189e-06 ***
+2 (88)  0.2060084  -0.0114943  0.0020962           4.7505       2.029e-06 ***
+3 (88)  0.0668273  -0.0114943  0.0014602           2.0496        0.040400 *  
+4 (88)  0.0299470  -0.0114943  0.0011717           1.2107        0.226015    
+5 (88) -0.1530471  -0.0114943  0.0012440          -4.0134       5.984e-05 ***
+6 (88) -0.1187070  -0.0114943  0.0016791          -2.6164        0.008886 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>Does it mean that the Moran’s I statistic estimate for order =4 is not statically significant?</p>
 <section id="compute-gearys-c-correlogram-and-plot" class="level3">
 <h3 class="anchored" data-anchor-id="compute-gearys-c-correlogram-and-plot">4.5.2 Compute Geary’s C correlogram and plot</h3>
+<p>In the code chunk below, <em>sp.correlogram()</em> of <strong>spdep</strong> package is used to compute a 6-lag spatial correlogram of GDPPC. The global spatial autocorrelation used in Geary's C. The <strong>plot()</strong> of base Graph is then used to plot the output.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>GC_corr <span class="ot">&lt;-</span> <span class="fu">sp.correlogram</span>(wm_q, </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>                          hunan<span class="sc">$</span>GDPPC,</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">order =</span><span class="dv">6</span> ,</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">method =</span> <span class="st">"C"</span>,</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">style =</span> <span class="st">"W"</span>)</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(GC_corr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Hands-on_Ex04_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>To check for statistical significance in the Geary C values:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(GC_corr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Spatial correlogram for hunan$GDPPC 
+method: Geary's C
+        estimate expectation  variance standard deviate Pr(I) two sided    
+1 (88) 0.6907223   1.0000000 0.0073364          -3.6108       0.0003052 ***
+2 (88) 0.7630197   1.0000000 0.0049126          -3.3811       0.0007220 ***
+3 (88) 0.9397299   1.0000000 0.0049005          -0.8610       0.3892612    
+4 (88) 1.0098462   1.0000000 0.0039631           0.1564       0.8757128    
+5 (88) 1.2008204   1.0000000 0.0035568           3.3673       0.0007592 ***
+6 (88) 1.0773386   1.0000000 0.0058042           1.0151       0.3100407    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>Geary C order 3,4,6 are not statistically significant?</p>
 </section>
 </section>
 <section id="cluster-and-outlier-analysis" class="level2">
@@ -794,6 +908,7 @@ alternative hypothesis: greater</code></pre>
 <h3 class="anchored" data-anchor-id="mapping-gi-values-with-adaptive-distance-weights">4.9.4 Mapping Gi values with adaptive distance weights</h3>
 
 
+</section>
 </section>
 </section>
 

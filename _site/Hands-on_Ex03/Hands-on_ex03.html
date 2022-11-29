@@ -154,7 +154,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  <span class="dropdown-text">Hands-on Exercise 2</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_Ex03.html">
+    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_ex03.html">
  <span class="dropdown-text">Hands-on Exercise 3</span></a>
   </li>  
         <li>
@@ -415,6 +415,7 @@ Link number distribution:
 <li><p>88 area units in Hunan</p></li>
 <li><p>most connected unit (88) has 11 neighbours</p></li>
 <li><p>two area units (30 &amp; 65) with only one neighbour</p></li>
+<li><p>The ‘link number distribution’ tells us the frequency distribution ( 2 county has 1 neighbour, 2 county has 2 neighbours, 12 county has 3 neighbours)</p></li>
 </ul>
 <p>To see the neighbours of the first polygon, use code chunk below:</p>
 <div class="cell">
@@ -1190,8 +1191,8 @@ Non-symmetric neighbours list</code></pre>
 <p>Arguments</p>
 <table class="table">
 <colgroup>
-<col style="width: 18%">
-<col style="width: 81%">
+<col style="width: 22%">
+<col style="width: 77%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -1697,7 +1698,7 @@ B 88 7744 448 896 10224</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb108"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a>wm_q1 <span class="ot">&lt;-</span> wm_q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>To add the diagonal element to the neighbour list, we just need to use <em>include.self()</em> from <strong>spdep</strong>.</p>
+<p>IF we want to add the diagonal element to the neighbour list, we just need to use <em>include.self()</em> from <strong>spdep</strong>. Use this instead to overwrite: wm_q1 &lt;- include.self(wm_q1)</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="fu">include.self</span>(wm_q1) <span class="co">#look the same as wm_q1 but diff structurally</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -1975,14 +1976,14 @@ B 88 7744 448 896 10224</code></pre>
 <li><p>b_weights2&lt;-Nb2listw(wm_q, glist=b_weights) to assign weights</p></li>
 <li><p>Create lag sum variable (a calculated variable for each polygons’s gdppc neighbour sum) using lag.listw(b_weights2, hunan$gdpcc) again</p></li>
 </ul>
-<p>5.3. Spatial Window AVERAGE (create neighbour structure with diagonals , standardize rows with equal weight)</p>
+<p>5.3. Spatial Window AVERAGE (create neighbour structure with (or without) diagonals , standardize rows with equal weight)</p>
 <ul>
 <li><p>wm_q1 &lt;-Include.self(wm_q)</p></li>
 <li><p>Standardize row weights using nb2listw() again</p></li>
 <li><p>Use lag.listw() again to get spatially lag variable</p></li>
 <li><p>Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()</p></li>
 </ul>
-<p>5.4. Spatial Weights SUM (without row standardized weights, assign binary weights to neighbour structure with diagonal element)</p>
+<p>5.4. Spatial Weights SUM (without row standardized weights, assign binary weights to neighbour structure with (or without) diagonal element)</p>
 </section>
 </section>
 <section id="references" class="level2">

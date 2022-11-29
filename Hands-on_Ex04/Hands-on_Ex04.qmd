@@ -23,7 +23,7 @@ Recall
 
 -   wm_q is neighbour list (class = nb) \<- poly2nb() \| wm_d62 is a fixed distance weight matrix \| knn6 is an adaptive distance weight matrix \<- knn2nb( knearneigh(coords, k = 6)). We can plot the neighbours on map.
 
--   rswm_q is equal weightage spatial matrix \<- nb2listw( nb class obj) \| rswm_ids is a weighted spatial spatial matrix using ids (inverse distance matrix, class list) \<- nb2listw(nb class obj, glist = ids, stlye='B')
+-   rswm_q is equal weightage spatial matrix \<- nb2listw( nb class obj) \| rswm_ids is a weighted spatial spatial matrix using ids (inverse distance matrix, class list) \<- nb2listw(nb class obj, glist = ids, style='B')
 
 -   GDPPC.lag \<- a spatial lag variable that gives the averaged neighbour GDPPC value for one's neighbours \<- lag.listw( weight matrix, shapefile file \$ col)
 
@@ -333,9 +333,94 @@ For Geary C, 1 means close to randomness. With a Geary C statistic value of 0.69
 
 ## 4.5 Spatial Correlogram
 
+**Spatial correlograms** are great to examine patterns of **spatial autocorrelation** in your data or model residuals. They show how correlated are pairs of spatial observations when you increase the distance (lag) between them - they are plots of some index of autocorrelation (Moran\'s I or Geary\'s c) against distance. Although correlograms are not as fundamental as variograms (a keystone concept of geostatistics), they are very useful as an **exploratory** and **descriptive** tool. For this purpose they actually provide richer information than variograms.
+
 ### 4.5.1 Compute Moran's I correlogram
 
+-   to compute 6-lag spatial correlogram of GDPPC, use the sp.correlogram() of the spdep package.
+
+# **Spatial correlogram**
+
+Spatial correlograms for **Moran's I** and the **autocorrelation coefficient**, with print and plot helper functions.
+
+    sp.correlogram(neighbours, var, order = 1, method = "corr",
+     style = "W", randomisation = TRUE, zero.policy = NULL, spChk=NULL)
+    # S3 method for spcor
+    plot(x, main, ylab, ylim, ...)
+    # S3 method for spcor
+    print(x, p.adj.method="none", ...)
+
+## **Arguments**
+
+**neighbours**
+
+:   an object of class `nb`
+
+**var**
+
+:   a numeric vector
+
+**order**
+
+:   maximum lag order
+
+**method**
+
+:   "corr" for correlation, "I" for Moran's I, "C" for Geary's C
+
+**style**
+
+:   `style` can take values W, B, C, and S
+
+**randomisation**
+
+:   variance of I or C calculated under the assumption of randomisation, if FALSE normality
+
+**zero.policy**
+
+:   default NULL, use global option value; if FALSE stop with error for any empty neighbour sets, if TRUE permit the weights list to be formed with zero-length weights vectors
+
+Refer to lecture notes on ORDER, order 1 means first layer of neighbours using the contiguity / boundary method. We want to check how the Moran's I method changes as the neighbours get further and further away.
+
+```{r}
+MI_corr <- sp.correlogram(wm_q, 
+                          hunan$GDPPC,
+                          order =6 ,
+                          method = "I",
+                          style = "W")
+
+plot(MI_corr)
+```
+
+Based on the plot above, not all autocorrelation values might be statistically significant, thus its important to print the analysis results as shown below:
+
+```{r}
+print(MI_corr)
+```
+
+Does it mean that the Moran's I statistic estimate for order =4 is not statically significant?
+
 ### 4.5.2 Compute Geary's C correlogram and plot
+
+In the code chunk below, *sp.correlogram()* of **spdep** package is used to compute a 6-lag spatial correlogram of GDPPC. The global spatial autocorrelation used in Geary\'s C. The **plot()** of base Graph is then used to plot the output.
+
+```{r}
+GC_corr <- sp.correlogram(wm_q, 
+                          hunan$GDPPC,
+                          order =6 ,
+                          method = "C",
+                          style = "W")
+
+plot(GC_corr)
+```
+
+To check for statistical significance in the Geary C values:
+
+```{r}
+print(GC_corr)
+```
+
+Geary C order 3,4,6 are not statistically significant?
 
 ## 4.6 Cluster and Outlier Analysis
 

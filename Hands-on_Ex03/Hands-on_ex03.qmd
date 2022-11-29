@@ -87,6 +87,8 @@ summary(wm_q)
 
 -   two area units (30 & 65) with only one neighbour
 
+-   The 'link number distribution' tells us the frequency distribution ( 2 county has 1 neighbour, 2 county has 2 neighbours, 12 county has 3 neighbours)
+
 To see the neighbours of the first polygon, use code chunk below:
 
 ```{r}
@@ -429,7 +431,7 @@ Use the [nb2listw()](https://search.r-project.org/CRAN/refmans/spdep/html/nb2lis
 Arguments
 
 | `neighbours`  | an object of class `nb`                                                                                                                                                     |
-|-------------|-----------------------------------------------------------|
+|----------------|--------------------------------------------------------|
 | `glist`       | list of general weights corresponding to neighbours                                                                                                                         |
 | `style`       | `style` can take values "W", "B", "C", "U", "minmax" and "S"                                                                                                                |
 | `zero.policy` | default NULL, use global option value; if FALSE stop with error for any empty neighbour sets, if TRUE permit the weights list to be formed with zero-length weights vectors |
@@ -609,7 +611,7 @@ Need to add the diagonal element to the neighbour structure before assigning wei
 wm_q1 <- wm_q
 ```
 
-To add the diagonal element to the neighbour list, we just need to use *include.self()* from **spdep**.
+IF we want to add the diagonal element to the neighbour list, we just need to use *include.self()* from **spdep**. Use this instead to overwrite: wm_q1 \<- include.self(wm_q1)
 
 ```{r}
 include.self(wm_q1) #look the same as wm_q1 but diff structurally
@@ -749,7 +751,7 @@ tmap_arrange(gdppc, w_sum_gdppc, asp=1, ncol=2)
 
 -   Create lag sum variable (a calculated variable for each polygons's gdppc neighbour sum) using lag.listw(b_weights2, hunan\$gdpcc) again
 
-5.3. Spatial Window AVERAGE (create neighbour structure with diagonals , standardize rows with equal weight)
+5.3. Spatial Window AVERAGE (create neighbour structure with (or without) diagonals , standardize rows with equal weight)
 
 -   wm_q1 \<-Include.self(wm_q)
 
@@ -759,7 +761,7 @@ tmap_arrange(gdppc, w_sum_gdppc, asp=1, ncol=2)
 
 -   Append, set as df, rename cols, left join , plot qtm x2 and tm_arrange()
 
-5.4. Spatial Weights SUM (without row standardized weights, assign binary weights to neighbour structure with diagonal element)
+5.4. Spatial Weights SUM (without row standardized weights, assign binary weights to neighbour structure with (or without) diagonal element)
 
 ## 3.9 References
 
