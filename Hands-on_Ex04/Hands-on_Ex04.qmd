@@ -21,11 +21,58 @@ In this hands-on exercises, I will be
 
 Recall
 
--   wm_q is neighbour list (class = nb) \<- **poly2nb()** \| wm_d62 is a fixed distance weight matrix \| knn6 is an adaptive distance weight matrix \<- **knn2nb**( knearneigh(coords, k = 6)). We can plot the neighbours on map.
+-   wm_q is neighbour list (class = nb) \<- **poly2nb()**
 
--   rswm_q is equal weightage spatial matrix via rows standardisation \<- **nb2listw**( nb class obj) \| rswm_ids is a weighted spatial spatial matrix using ids (inverse distance matrix, class list) \<- nb2listw(nb class obj, glist = ids, style='B')
+-   for distance based concept, find coordinates to relate to polygons first. Next find the upper bound so that each polygon has at least one neighbour. Use knearneigh() to find k-nearest neighbour, then convert [knn object]{.underline} to [nb object]{.underline} using knn2nb(). Lastly, use nbdists() to calculate distance of all neighbours. Use unlist() to remove list structure. use *summary (k1dists)* to check details. Get the threshold distance.
+
+-   Now we have coords and a distance threshold , we can create a neighbour list of nb class using dnearneigh(coords, 0, 62, longlat = TRUE)
+
+    -   wm_d62 is a neighbour list obj with class nb, made from dnearneighbour(). Use *summary(wm_d62)* to check details. Use str(wm_d62) to see attributes, then index (wm_d62\[1:5\]) to view first 5 neighbour list.
+
+-   Alternatively, we can create a neighbour list based on adaptive distance using **knn2nb**( knearneigh(coords, k = 6)). knn6 is a neighbour list obj with class nb. We can plot the neighbours on map.
+
+-   Use nb2listw() to convert from nb obj to listw obj (To create spatial weight object to calculate spatial lag later)
+
+    -   In hands-on 3 , rswm_q is equal weightage spatial matrix object via rows standardisation \<- **nb2listw**( nb class obj) . This is based on contiguity concept.
+
+    -   In hands-on 3, rswm_ids is a weighted spatial matrix object using contiguity concept, but infused with ids (inverse distance matrix, class list) \<- nb2listw(nb class obj, glist = ids, style='B'). This is also based on contiguity method, but style B which is more robust as we differ the weighting according to another inverse distance matrix separately derived.
+
+    -   in hands-on 4, wm62_lw is the binary weight spatial matrix object using fixed-distance concept. wm62_lw \<- nb2listw(wm_d62, style = 'B'). Can use summary(wm62_lw) for quick discovery. str(wm62_lw) to check attributes and then index wm62_lw\$weights\[1:5\] to check the first five weights of our spatial weights matrix (binary)
+
+    -   in hands-on 4, knn_lw is the binary weight spatial matrix object using adaptive distance concept (fixed number of neighbours)
 
 -   GDPPC.lag \<- a spatial lag variable that gives the averaged neighbour GDPPC value for one's neighbours \<- **lag.listw**( weight matrix, shapefile file \$ col)
+
+-   Other points to note: cbind() is to combine data frame with same number of rows.
+
+    -   hunan is a simple feature collection with class 'sf' , ' data frame'
+
+    -   Create a new sf data frame (hunan.gi) by adding a localG vector to hunan as a new column, use cbind() and then rename column. as.matrix(gi.fixed) straightens the Gi values into 1 col of 88 rows.
+
+        -   hunan.gi \<- cbind(hunan, as.matrix(gi.fixed)) %\>% rename(gstat_fixed = as.matrix.gi.fixed.)
+
+    -   Similarly, create a new sf data frame by adding localMI vector to hunan sf dataframe as a new column,
+
+        -   hunan.localMI \<- cbind(hunan,localMI)%\>% rename(Pr.Ii = Pr.z\....E.Ii..)
+
+    -   To add a new lag_GDPPC column into hunan:
+
+        -   hunan\$lag_GDPPC \<- lag.listw(rswm_q, hunan\$GDPPC)
+
+    -   Add a new column of standardised GDPPC by scaling original GDPPC column.
+
+        -   hunan\$Z.GDPPC \<- scale(hunan\$GDPPC) %\>% as.vector
+
+    -   The most indirect method (hands-on 3)
+
+        -   lag.list \<- list ( hunan\$NAME_3, lag.listw (rswm_q, hunan \$ GDPPC))
+
+        -   lag.res \<- as.data.frame(lag.list)
+
+        -   colnames(lag.res) \<- c('colname1' , 'colname2')
+
+        -   hunan \<- leftjoin(hunan, lag.res)
+
 
 ### 4.2.1 The analytical question
 
@@ -642,7 +689,7 @@ hunan$Z.GDPPC <- scale(hunan$GDPPC) %>%
   as.vector
 ```
 
-The [*as.vector()*](https://www.rdocumentation.org/packages/pbdDMAT/versions/0.5-1/topics/as.vector) added to the end is to make sure that the data type we get out of this is a vector, that map neatly into out dataframe.
+The [*as.vector()*](https://www.rdocumentation.org/packages/pbdDMAT/versions/0.5-1/topics/as.vector) added to the end is to make sure that the data type we get out of this is a vector, that map neatly into our dataframe.
 
 Yixin's observation: without as.vector(), the \['Z.GDPPC'\] column in slotted between \['GDPPC'\] col and \['geometry'\] column. After as.vector(), this variable is after \['geo'\] col!
 
@@ -851,11 +898,11 @@ st_geometry(hunan)
 ```
 
 ```{r}
-longitude <- map_dbl (hunan$geometry, ~st_centroid(.x)[[1]])
+longitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[1]])
 ```
 
 ```{r}
-latitude <- map_dbl (hunan$geometry, ~st_centroid(.x)[[2]])
+latitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[2]])
 ```
 
 Combine the two vectors using cbind
@@ -873,12 +920,23 @@ head(coords)
 -   find my nearest neighbour array ID within *coords*, and their corresponding (x,y) coordinates
     using [*knearneigh()*](https://r-spatial.github.io/spdep/reference/knearneigh.html) of **spdep**.
 
+-   mynearestneighbour \<- knearneigh(coords , k =1)
+
 ```{r}
-knearneigh(coords)
+mynearestneighbour <- knearneigh(coords)
+```
+
+```{r}
+knearneigh(coords)$nn [1:5]
+```
+
+Nearest neighbour of polygon 1 is polygon 3 etc...
+
+```{r}
 knearneigh(coords)$x [1:5,]
 ```
 
--   convert the knn object to meighbours list of nb class using [*knn2nb()*](https://r-spatial.github.io/spdep/reference/knn2nb.html).
+-   Convert the knn object to neighbours list of nb class using [*knn2nb()*](https://r-spatial.github.io/spdep/reference/knn2nb.html).
 
 ```{r}
 k1 <- knn2nb(knearneigh(coords))
@@ -892,8 +950,13 @@ k1
 
 ```{r}
 k1dists <- unlist(nbdists(k1, coords, longlat=TRUE))
+head(k1dists)
 summary(k1dists)
 ```
+
+-   hunan dataset is unprojected dataset
+
+-   If unprojected coordinates are used and either specified in the coordinates object x or with x as a two column matrix and **longlat=TRUE**, great circle distances in **km** will be calculated assuming the WGS84 reference ellipsoid.
 
 The summary report shows that the largest first nearest neighbour distance is 61.79 km, so using this as the upper threshold gives certainty that all units will have at least one neighbour.
 
@@ -908,14 +971,126 @@ summary(k1dists)
 
 #### 4.8.2.3 Computing fixed distance weight matrix
 
+-   Now we have all the neighbour distances, we can compute the nieghbour list of class nb by using [*dnearneigh()*](https://r-spatial.github.io/spdep/reference/dnearneigh.html) that requires us to indicate the distance threshold. The output is first a neighbour list of **nb class**.
+
+```{r}
+wm_d62 <- dnearneigh(coords, 0, 62, longlat = TRUE)
+summary(wm_d62)
+```
+
+I can see my neighbours list using str()
+
+```{r}
+#str(wm_d62)
+wm_d62[1:5]
+```
+
+-   To create our **spatial distance weight matrix,** to convert **nb object** to **spatial weight object wm62_lw**: use *nb2listw()* , where the input arugment is a neighbour list of nb class.
+
+-   in the case below, we are using binary weight. So the spatial weight matrix will contain only 1 or 0.
+
+```{r}
+wm62_lw <- nb2listw(wm_d62, style= "B")
+summary(wm62_lw)
+```
+
+```{r}
+str(wm62_lw)
+wm62_lw$neighbours[1:5]
+```
+
+```{r}
+wm62_lw$weights[1:5]
+```
+
 ### 4.8.3 Computing adaptive distance weight matrix
+
+Having many neighbours smoothes the neighbour relationship across more neighbours. Therefore less densely populated regions have less neighbours. Regions with bigger area will also have less neighbours. So, we might want to CONTROL the number of neighbours using knearneigh() indicating k.
+
+We can either accept asymmetric neighbours or impose symmetry.
+
+-   To create our neighbours list of class nb based on 8 nearest neighbours:
+
+```{r}
+knn <- knn2nb(knearneigh(coords, k=8))
+knn
+#knn[1:5]
+```
+
+-   To convert our nb object to spatial weight object with binary weights:
+
+```{r}
+knn_lw <- nb2listw(knn, style = "B")
+summary(knn_lw)
+```
+
+All of them are equal in number of connections (above) 8 neighbours, thus 8 binary weights (below).
+
+```{r}
+#str(knn_lw)
+#knn_lw$neighbours[1:10]
+knn_lw$weights[1:5]
+```
 
 ## 4.9 Computing Gi statistics
 
 ### 4.9.1 Gi statistics using fixed distance
 
+```{r}
+fips <- order(hunan$County) #by alphabetical order?
+gi.fixed <- localG(hunan$GDPPC, wm62_lw)
+gi.fixed
+```
+
+The output of localG() is **a vector of G** or Gstar values, with attributes \"gstari\" set to TRUE or FALSE, \"call\" set to the function call, and class \"localG\".
+
+The Gi statistics is represented as a Z-score. Greater values represent a **greater intensity** of clustering and the **direction** (positive or negative) indicates **high** or **low** clusters
+
+-   Next, join the Gi values to their corresponding hunan sf data frame.
+
+-   as.matrix(gi.fixed) will aligned the Gi values into a single row to 88 values (akin to data frame)
+
+-   cbind() is column combine for data frames with equal number of rows. to create a new data frame hunan.gi
+
+-   rename the column
+
+```{r}
+hunan.gi <- cbind(hunan, as.matrix(gi.fixed)) %>% 
+  rename(gstat_fixed = as.matrix.gi.fixed.)
+```
+
 ### 4.9.2 Mapping Gi values with fixed distance weights
 
+To map the Gi values derived using fixed distance weight matrix
+
+```{r}
+gdppc <- qtm(hunan, 'GDPPC') +
+  tm_layout(legend.width = 0.2,
+            legend.height = 0.2)
+
+Gimap <- tm_shape(hunan.gi) + 
+  tm_fill(col='gstat_fixed',
+          palette= '-RdBu',
+          style='pretty',
+          title='local Gi') +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.width = 0.3,
+            legend.height = 0.3)
+
+tmap_arrange(gdppc, Gimap,
+             asp=1, ncol=2)
+  
+```
+
+Question: What statistical observation can you draw from the Gi map above?
+
 ### 4.9.3 Gi statistics using adaptive distance
+
+```{r}
+fips <- order(hunan$County)
+gi.adaptive <- localG(hunan$GDPPC, knn_lw)
+hunan.gi <- cbind(hunan, as.matrix(gi.adaptive)) %>%
+  rename(gstat_adaptive = as.matrix.gi.adaptive.)
+```
 
 ### 4.9.4 Mapping Gi values with adaptive distance weights
