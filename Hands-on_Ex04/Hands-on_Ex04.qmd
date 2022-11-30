@@ -53,7 +53,7 @@ Recall
 
     -   Similarly, create a new sf data frame by adding localMI vector to hunan sf dataframe as a new column,
 
-        -   hunan.localMI \<- cbind(hunan,localMI)%\>% rename(Pr.Ii = Pr.z\....E.Ii..)
+        -   hunan.localMI \<- cbind(hunan,localMI)%\>% rename(Pr.Ii = Pr.z....E.Ii..)
 
     -   To add a new lag_GDPPC column into hunan:
 
@@ -72,7 +72,6 @@ Recall
         -   colnames(lag.res) \<- c('colname1' , 'colname2')
 
         -   hunan \<- leftjoin(hunan, lag.res)
-
 
 ### 4.2.1 The analytical question
 
@@ -917,8 +916,7 @@ head(coords)
 
 #### 4.8.2.2 Determine the cut-off distance
 
--   find my nearest neighbour array ID within *coords*, and their corresponding (x,y) coordinates
-    using [*knearneigh()*](https://r-spatial.github.io/spdep/reference/knearneigh.html) of **spdep**.
+-   find my nearest neighbour array ID within *coords*, and their corresponding (x,y) coordinates using [*knearneigh()*](https://r-spatial.github.io/spdep/reference/knearneigh.html) of **spdep**.
 
 -   mynearestneighbour \<- knearneigh(coords , k =1)
 
@@ -943,8 +941,7 @@ k1 <- knn2nb(knearneigh(coords))
 k1
 ```
 
--   return the length of neighbour relationship edges using [*nbdists()*](https://r-spatial.github.io/spdep/reference/nbdists.html) of **spdep**.
-    The function returns in the units of the coordinates if the coordinates are projected, in km otherwise.
+-   return the length of neighbour relationship edges using [*nbdists()*](https://r-spatial.github.io/spdep/reference/nbdists.html) of **spdep**. The function returns in the units of the coordinates if the coordinates are projected, in km otherwise.
 
 -   remove the list structure of the returned object using unlist()
 
@@ -1042,7 +1039,7 @@ gi.fixed <- localG(hunan$GDPPC, wm62_lw)
 gi.fixed
 ```
 
-The output of localG() is **a vector of G** or Gstar values, with attributes \"gstari\" set to TRUE or FALSE, \"call\" set to the function call, and class \"localG\".
+The output of localG() is **a vector of G** or Gstar values, with attributes "gstari" set to TRUE or FALSE, "call" set to the function call, and class "localG".
 
 The Gi statistics is represented as a Z-score. Greater values represent a **greater intensity** of clustering and the **direction** (positive or negative) indicates **high** or **low** clusters
 
@@ -1094,3 +1091,24 @@ hunan.gi <- cbind(hunan, as.matrix(gi.adaptive)) %>%
 ```
 
 ### 4.9.4 Mapping Gi values with adaptive distance weights
+
+```{r}
+gdppc <- qtm(hunan, 'GDPPC') +
+  tm_layout(legend.width = 0.2,
+            legend.height = 0.2)
+
+Gimap <- tm_shape(hunan.gi) + 
+  tm_fill(col='gstat_adaptive',
+          palette= '-RdBu',
+          style='pretty',
+          title='local Gi adaptive') +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.width = 0.3,
+            legend.height = 0.3)
+
+tmap_arrange(gdppc, Gimap,
+             asp=1, ncol=2)
+  
+```
+
+Question: What statistical observation can you draw from the Gi map above?
