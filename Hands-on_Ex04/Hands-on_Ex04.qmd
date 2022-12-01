@@ -702,6 +702,12 @@ nci2 <- moran.plot(hunan$Z.GDPPC,
                    ylab="Spatially Lag z-GDPPC 2012")
 ```
 
+-   we can get the magnitude and the direction of the spatial autocorrelation from the slope of the Moran scatterplot. Positive means clustering observe and the magnitude indicates the degree of clustering.
+
+-   The problem with the Moran scatterplot is that it does not tell us which Moran values are statistically significant and which are not . It also does not tell us where the hot and cold spots are located at.
+
+-   We can use the LISA method to do so. localMoran() function
+
 ### 4.7.3 Preparing LISA map classes
 
 | 1. vector(mode=? , length = ? ) is to create a vector (alternative1: a \<-c(1,2,3)) (alternative2: series \<- 1:10)
@@ -836,7 +842,7 @@ tmap_arrange(gdppc, LISAmap,
 
 -   The red regions have high GDPCC surrounded regions of by high GDPCC around me (spatial lag gdppc) The dark blue regions have low GDPCC and has low spatial lag (surrounding) gdppc values.
 
--   can also include the local Moran's I map and p-value map as shown below for easy comparison.
+-   can also include the local Moran's I map and p-value map as shown below for easy comparison. But note that areas that are statistically insignificant are also included.
 
 ```{r}
 tmap_arrange(localMI.map, pvalue.map, asp=1, ncol=2)

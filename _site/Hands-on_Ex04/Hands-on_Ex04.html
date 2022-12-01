@@ -154,12 +154,21 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
  <span class="dropdown-text">Hands-on Exercise 2</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_ex03.html">
+    <a class="dropdown-item" href="../Hands-on_Ex03/Hands-on_Ex03.html">
  <span class="dropdown-text">Hands-on Exercise 3</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="../Hands-on_Ex04/Hands-on_Ex04.html">
  <span class="dropdown-text">Hands-on Exercise 4</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-take-home-exercises" role="button" data-bs-toggle="dropdown" aria-expanded="false">Take-home Exercises</a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-take-home-exercises">    
+        <li>
+    <a class="dropdown-item" href="../Take-home_Ex01/Take-home_Ex01.html">
+ <span class="dropdown-text">Take-home Exercise 1</span></a>
   </li>  
     </ul>
   </li>
@@ -1312,6 +1321,11 @@ Geodetic CRS:  WGS 84
 <p><img src="Hands-on_Ex04_files/figure-html/unnamed-chunk-46-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<ul>
+<li><p>we can get the magnitude and the direction of the spatial autocorrelation from the slope of the Moran scatterplot. Positive means clustering observe and the magnitude indicates the degree of clustering.</p></li>
+<li><p>The problem with the Moran scatterplot is that it does not tell us which Moran values are statistically significant and which are not . It also does not tell us where the hot and cold spots are located at.</p></li>
+<li><p>We can use the LISA method to do so. localMoran() function</p></li>
+</ul>
 </section>
 <section id="preparing-lisa-map-classes" class="level3">
 <h3 class="anchored" data-anchor-id="preparing-lisa-map-classes">4.7.3 Preparing LISA map classes</h3>
@@ -1473,7 +1487,7 @@ Geodetic CRS:  WGS 84
 <ul>
 <li><p>Quadrant has removed all insignificant regions, thus hunan.localMI and hence LISA map do not include p &gt; 0.05</p></li>
 <li><p>The red regions have high GDPCC surrounded regions of by high GDPCC around me (spatial lag gdppc) The dark blue regions have low GDPCC and has low spatial lag (surrounding) gdppc values.</p></li>
-<li><p>can also include the local Moran’s I map and p-value map as shown below for easy comparison.</p></li>
+<li><p>can also include the local Moran’s I map and p-value map as shown below for easy comparison. But note that areas that are statistically insignificant are also included.</p></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(localMI.map, pvalue.map, <span class="at">asp=</span><span class="dv">1</span>, <span class="at">ncol=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
