@@ -515,7 +515,7 @@ nga_wpnona.localMI <- cbind(nga_wpnona,localMI)%>%
 head(nga_wpnona.localMI)
 ```
 
-### 3.3 Mapping both  local Moran's I and its p-value
+### 3.3 Mapping both local Moran's I and its p-value
 
 ```{r}
 localMI.map <- tm_shape(nga_wpnona.localMI)+
@@ -572,9 +572,9 @@ DV <- nga_wpnona$lag_PctNonFunc - mean(nga_wpnona$lag_PctNonFunc)
 class(DV)
 ```
 
-Center the local Moran\'s around the mean
+Center the local Moran's around the mean
 
-The first col \[ , 1\] of the localMI matrix contains LocalMoran\'s I values
+The first col \[ , 1\] of the localMI matrix contains LocalMoran's I values
 
 ```{r}
 LM_I <- localMI[,1] - mean(localMI[,1])
@@ -668,12 +668,4 @@ tmap_arrange(wp_nonfunctional, LISAmap,
              asp = 1, ncol =2)
 ```
 
-#### 
-
-
-
-
-
-
-
-
+Prof kam take-home 1: https://isss624.netlify.app/in-class_ex/in-class_ex2/in-class_ex2
