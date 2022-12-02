@@ -650,6 +650,12 @@ pvalue.map <- tm_shape(hunan.localMI)+
 tmap_arrange(localMI.map, pvalue.map, asp=1, ncol=2)
 ```
 
+The Moran's I plot gave us non sig plots, and we need to cross check with the plot on the right hand side (p-values). We can turn to the LISA map as it shows only the clusters or outliers with only significant regions.
+
+Later, we will see that even creating the Moran scatterplot via Moran.plot() will not tell us about statisitical significance.
+
+LISA uses the p-values in the localmoran() function primarily but it does not automatically plot out any maps in R. We have to manually write some R codes to indicate the HH, LL, LH, HL (spatial lag and local moran values) and non-significant areas and map these areas out.
+
 ## 4.7 Creating a LISA Cluster Map
 
 The LISA Cluster Map shows the significant locations color coded by type of spatial autocorrelation. The first step before we can generate the LISA cluster map is to plot the Moran scatterplot.
@@ -702,7 +708,7 @@ nci2 <- moran.plot(hunan$Z.GDPPC,
                    ylab="Spatially Lag z-GDPPC 2012")
 ```
 
--   we can get the magnitude and the direction of the spatial autocorrelation from the slope of the Moran scatterplot. Positive means clustering observe and the magnitude indicates the degree of clustering.
+-   We can get the magnitude and the direction of the spatial autocorrelation from the slope of the Moran scatterplot. Positive means clustering observe and the magnitude indicates the degree of clustering.
 
 -   The problem with the Moran scatterplot is that it does not tell us which Moran values are statistically significant and which are not . It also does not tell us where the hot and cold spots are located at.
 

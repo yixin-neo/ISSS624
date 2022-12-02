@@ -1,4 +1,304 @@
 ---
 title: "Take_home_Ex01"
 editor: visual
+auther: Neo Yi Xin
+execute: 
+  warning: false
+  message: false
 ---
+
+# Objectives
+
+In this exercise, I will apply appropriate global and local measures of spatial Association techniques to reveals the spatial patterns of Not Functional water points in Nigeria.
+
+The task:
+
+-   Using appropriate tidyr and dplyr methods, derive the proportion of functional and non-functional water point at LGA level.
+
+-   Combining the geospatial and aspatial data frame into simple feature data frame.
+
+-   Performing outliers/clusters analysis by using appropriate local measures of spatial association methods.
+
+-   Performing hotspot areas analysis by using appropriate local measures of spatial association methods.
+
+### Thematic Mapping
+
+-   Plot maps to show the spatial distribution of functional and non-functional water point rate at LGA level by using appropriate thematic mapping technique provided by tmap package.
+
+### Analytical Mapping
+
+-   Plot hotspot areas and outliers/clusters maps of functional and non0functional water point rate at LGA level by using appropriate thematic mapping technique provided by tmap package.
+
+```{r}
+library(sf)
+library(tidyverse)
+library(tmap)
+library(spdep)
+library(funModeling)
+```
+
+## Importing the Geospatial data
+
+Two geospatial data sets will be used, they are:
+
+-   geo_export
+
+-   nga_admbnda_adm2_osgof_20190417
+
+### Importing water point geospatial data
+
+Before importing this data, open the projection component of the geo_export shape file and check the coordinates system first. In this case, the coordinates are in WSG84 (geo / spherical) format, so the crs code is 4326.
+
+```{r}
+#| eval: false
+wp <- st_read(dsn='geodata',
+              layer = 'geo_export',
+              crs = 4326) %>% 
+  filter(clean_coun == 'Nigeria')
+```
+
+| **#\| eval: false** is only display the codes between 41-44 without running the code.  Note that by default, eval: true is used so you do not have to specify.
+
+| Do not confuse rmarkdown way of writing code versus Quarto, refer to link below: https://quarto.org/docs/reference/formats/html.html#execution
+
+```{r}
+#| eval: false
+st_geometry(wp)
+```
+
+```{r}
+#| eval: false
+st_crs(wp)
+```
+
+To list all the variables in a data frame
+
+```{r}
+#| eval: false 
+str(wp)
+ls(wp)
+```
+
+Be warned: Avoid performing transformation if you plan to use `st_intersects()` of **sf** package in the later stage of the geoprocessing. This is because `st_intersects()` only works correctly if the geospatial data are in geographic coordinate system (i.e. wgs84)
+
+```{r}
+#| eval: false
+write_rds(wp, 'geodata/wp_nga.rds')
+```
+
+### Importing Nigeria LGA BOUNDARY data
+
+Now, we are going to import the LGA boundary data into R environment by using the code chunk below.
+
+```{r}
+#| eval: false
+nga <- st_read(dsn='geodata',
+               layer='geoBoundaries-NGA-ADM2',
+               crs='4326')
+```
+
+```{r}
+#| eval: false
+nga <- st_set_crs(nga, 4326)
+st_crs(nga)
+```
+
+```{r}
+#| eval: false
+glimpse(nga)
+```
+
+```{r}
+#| eval: false
+qtm(nga, 'shapeName') +
+  tm_layout(legend.outside = TRUE)
+```
+
+To verify the number of planning areas in nga and to check the first 50 entries to check for signs of spelling errors
+
+```{r}
+#| eval: false
+dplyr::count(nga, shapeName, sort = TRUE) %>% print(n=50)
+```
+
+## Data Wrangling
+
+### Recoding NA values into string
+
+In the code chunk below, `replace_na()` is used to recode all the *NA* values in *status_cle* field into *Unknown*.
+
+```{r}
+#| eval: false
+wp_nga <- read_rds('geodata/wp_nga.rds') 
+```
+
+To print the first 50 observations
+
+```{r}
+#wp %>% select(status_id) %>% print(n=50)
+```
+
+Value_counts() equivalent , before replace [NA]{.underline} with [Unknown]{.underline}
+
+```{r}
+#| eval: false
+dplyr::count(wp_nga, status_cle, sort = TRUE)
+```
+
+Read rds file and immediately transform NA values of 'status_cle' into 'Unknown' upon reading
+
+```{r}
+#| eval: false
+wp_nga <- read_rds('geodata/wp_nga.rds') %>% 
+  mutate(status_cle = replace_na(status_cle, 'Unknown'))
+```
+
+```{r}
+#glimpse(wp_nga)
+```
+
+Check the data frame after mutate
+
+```{r}
+#| eval: false
+dplyr::count(wp_nga, status_cle, sort = TRUE)
+```
+
+### EDA
+
+In the code chunk below, `freq()` of **funModeling** package is used to display the distribution of *status_cle* field in *wp_nga*.
+
+```{r}
+#| eval: false
+freq (data = wp_nga,
+      input = 'status_cle')
+```
+
+## Extracting Water Point Data
+
+In this section, we will extract the water point records by using classes in *status_cle* field.
+
+### Extracting functional water point
+
+In the code chunk below, `filter()` of dplyr is used to select functional water points.
+
+```{r}
+#| eval: false
+wpt_functional <- wp_nga %>% 
+  filter(status_cle %in%
+           c('Functional',
+             'Functional but not in use',
+             'Functional but needs repair'))
+```
+
+Rechecking the visualisation
+
+```{r}
+#| eval: false
+freq (data = wpt_functional,
+      input = 'status_cle')
+```
+
+### Extracting non-functional water point
+
+In the code chunk below, `filter()` of dplyr is used to select non-functional water points.
+
+```{r}
+#| eval: false
+wpt_nonfunctional <- wp_nga %>% 
+  filter(status_cle %in%
+           c("Abandoned/Decommissioned", 
+             "Abandoned",
+             "Non-Functional",
+             "Non functional due to dry season",
+             "Non-Functional due to dry season"))
+```
+
+```{r}
+#| eval: false
+freq (data = wpt_nonfunctional,
+      input = 'status_cle')
+```
+
+### Extracting water point with Unknown class
+
+In the code chunk below, `filter()` of dplyr is used to select water points with unknown status.
+
+```{r}
+#| eval: false
+wpt_unknown <- wp_nga %>% 
+  filter(status_cle=="Unknown")
+```
+
+## Performing Point-in-Polygon Count
+
+nga refers to boundary data
+
+wp_nga refers to all water points
+
+wpt-functional refers to functional water points
+
+We will use st_intersects() to find the water points IDs that falls within each of the 774 polygons
+
+```{r}
+#| eval: false
+st_intersects(nga,wp_nga)
+```
+
+Each element in the list tells us the total number of water points (functional or not) in each polygon
+
+```{r}
+#| eval: false
+lengths(st_intersects(nga,wp_nga))
+```
+
+We can use the above method to also find the number of (2) functional, (3) non-functional and (4) unknown functionality water points that lie withing each polygon, and append all 4 lists to the original nga boundary sf data frame, calling it a new object nga_wp.
+
+```{r}
+#| eval: false
+nga_wp <- nga %>% 
+  mutate('total wpt' = lengths(st_intersects(nga, wp_nga))) %>% 
+  mutate('wpt functional' = lengths(st_intersects(nga, wpt_functional))) %>%
+  mutate('wpt non-functional' = lengths(st_intersects(nga, wpt_nonfunctional))) %>%
+  mutate('wpt unknown' = lengths(st_intersects(nga,wpt_unknown))) 
+```
+
+## Saving the Analytical Data Table
+
+We would like to compute the percentage of functional, non-functional and unknown water points
+
+*\*remember to use back tick for variables with space between the words*
+
+```{r}
+#| eval: false
+nga_wp <- nga_wp %>% 
+  mutate('pct_functional' = `wpt functional`/ `total wpt`) %>% 
+  mutate('pct_non-functional' = `wpt non-functional`/ `total wpt`) %>% 
+  mutate('pct_unknown' = `wpt unknown`/ `total wpt`)
+```
+
+```{r}
+#nga_wp <- nga_wp %>% 
+  #select(3:4, 9:10, 18:23)
+```
+
+```{r}
+#| eval: false
+write_rds(nga_wp, "geodata/nga_wp1.rds")
+```
+
+| Before you end this section, please remember to delete away all the raw data and add the code '#\| eval: false' to tell R not to evaluate the code chunks.
+| Notice that the only data file left is *nga_wp.rds* and it's file size is aroung 2.1MB.
+| 
+
+## Visualising the spatial dsitribution of water points
+
+```{r}
+nga_wp1 <- readRDS('geodata/nga_wp1.rds')
+total <- qtm(nga_wp1, 'total wpt') +
+  tm_layout(legend.height = 0.2,
+            legend.width = 0.2)
+total
+```
+
+| If I accidentally push too much data into git, refer to the link below: https://stackoverflow.com/questions/40115723/undo-git-commit-in-rstudio-that-is-too-big-to-push
