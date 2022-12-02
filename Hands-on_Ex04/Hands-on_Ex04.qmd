@@ -73,6 +73,10 @@ Recall
 
         -   hunan \<- leftjoin(hunan, lag.res)
 
+-   Use str(), summary(), glimpse(), attributes() on nb or listw class
+
+-   Use st_geometry() or st_crs() to check shapefiles
+
 ### 4.2.1 The analytical question
 
 -   is there equal distribution of development in the province?

@@ -61,6 +61,8 @@ wp <- st_read(dsn='geodata',
 
 | Do not confuse rmarkdown way of writing code versus Quarto, refer to link below: https://quarto.org/docs/reference/formats/html.html#execution
 
+| If I accidentally push too much data into git, refer to the link below: https://stackoverflow.com/questions/40115723/undo-git-commit-in-rstudio-that-is-too-big-to-push
+
 ```{r}
 #| eval: false
 st_geometry(wp)
@@ -269,6 +271,8 @@ We would like to compute the percentage of functional, non-functional and unknow
 
 *\*remember to use back tick for variables with space between the words*
 
+#\| eval: false
+
 ```{r}
 #| eval: false
 nga_wp <- nga_wp %>% 
@@ -291,14 +295,385 @@ write_rds(nga_wp, "geodata/nga_wp1.rds")
 | Notice that the only data file left is *nga_wp.rds* and it's file size is aroung 2.1MB.
 | 
 
-## Visualising the spatial dsitribution of water points
+## Visualising the spatial distribution of water points
+
+Seems to be based on "pretty' style
 
 ```{r}
 nga_wp1 <- readRDS('geodata/nga_wp1.rds')
+
 total <- qtm(nga_wp1, 'total wpt') +
   tm_layout(legend.height = 0.2,
             legend.width = 0.2)
-total
+
+wp_functional <- qtm(nga_wp1, 'wpt functional') +
+  tm_layout(legend.height = 0.2,
+            legend.width = 0.2)
+
+wp_nonfunctional <- qtm(nga_wp1, 'wpt non-functional') +
+  tm_layout(legend.height = 0.2,
+            legend.width = 0.2)
+
+unknown <- qtm(nga_wp1, 'wpt unknown') +
+  tm_layout(legend.height = 0.2,
+            legend.width = 0.2)
+
+tmap_arrange(total, wp_functional, wp_nonfunctional, unknown,
+             asp=1, ncol=2)
+
 ```
 
-| If I accidentally push too much data into git, refer to the link below: https://stackoverflow.com/questions/40115723/undo-git-commit-in-rstudio-that-is-too-big-to-push
+Plotting the basemap
+
+```{r}
+#| eval: false
+tm_shape(nga_wp1) +
+  tm_polygons()
+```
+
+## 1 Global Spatial Autocorrelation
+
+### 1.1.1 Computing Contiguity Spatial Weights (Contiguity: Queen)
+
+```{r}
+wm_q <- poly2nb(nga_wp1, queen=TRUE)
+summary(wm_q)
+```
+
+A total of 4440 neighbours links, there is one region (86) without neighbour. Region 508 has 14 neighbours. Most regions have about 4 to 7 neighbours.
+
+### 1.1.2 Computing spatial weights object (Queen, style = 'W') using nb2listw()
+
+```{r}
+rswm_q <- nb2listw(wm_q,
+                   style = "W",
+                   zero.policy=TRUE)
+summary(rswm_q, zero.policy = TRUE)
+```
+
+```{r}
+#| eval: false
+glimpse(rswm_q)
+```
+
+Taking a look at the distribution of pct_non-functional water pumps
+
+```{r}
+hist(nga_wp1$`pct_non-functional`,
+     freq=TRUE,
+     breaks= 'Sturges',
+     xlab= "pct of non-functional water pumps"
+     )
+#abline(v = 0, col="red")
+```
+
+### 1.1.3 Global Spatial Autocorrelation: Moran's I
+
+```{r}
+moran.test(nga_wp1$`pct_non-functional`,
+           listw=rswm_q,
+           zero.policy=TRUE,
+           na.action=na.omit)
+```
+
+There are 13 regions excluded as there are no water pumps there.
+
+### **The p-value of the Global Moran' I statistics is less than 0.05, we have enough statistical evidence to reject the null hypothesis and conclude that there are signs of clustering (Moran I statistic = + 0.4637) in non-functional water pumps.**
+
+1.1.4 Global Spatial Autocorrelation: Monte Carlo Moran's I
+
+```{r}
+set.seed(1234)
+
+bperm = moran.mc(nga_wp1$`pct_non-functional`,
+                 listw=rswm_q,
+                 nsim=999,
+                 zero.policy= TRUE,
+                 na.action=na.omit)
+
+bperm
+```
+
+### 1.1.5 Visualising Monte Carlo Moran's I
+
+```{r}
+summary(bperm$res[1:999])
+```
+
+```{r}
+hist(bperm$res,
+     freq=TRUE,
+     breaks= 20,
+     xlab= "Simulated Moran's I"
+     )
+abline(v = -0.001159, col="red")
+```
+
+**Since the Monte Carlo Global Moran' I statistic = 0.46319 and the p-value is 0.001, we can see that it lies on the extreme right side of this chart. It would mean that the Moran I statistic value obtained is much higher than what is expected by chance, and hence clustering is highly likely.**
+
+## 2 Spatial Correlogram
+
+### 2.1 Compute Moran's I correlogram
+
+Create a new data frame without NA rows else sp.correlogram() cannot work.
+
+```{r}
+nga_wpnona <- nga_wp1 %>%  drop_na()
+```
+
+Re define my neighbours
+
+```{r}
+wm_qnona <- poly2nb(nga_wpnona, queen=TRUE)
+summary(wm_qnona)
+```
+
+A total of 4348 neighbours links. Region 496 has most neighbours, 14 in total. Most regions have about 4 to 7 neighbours.
+
+```{r}
+rswm_qnona <- nb2listw(wm_qnona,
+                   style = "W",
+                   zero.policy=TRUE)
+summary(rswm_qnona, zero.policy = TRUE)
+```
+
+Re-check my global Moran I after removing all the NA rows
+
+```{r}
+set.seed(1234)
+
+bpermnona = moran.mc(nga_wpnona$`pct_non-functional`,
+                 listw=rswm_qnona,
+                 nsim=999,
+                 zero.policy= TRUE,
+                 na.action=na.omit)
+
+bpermnona
+```
+
+```{r}
+MI_corr <- sp.correlogram(wm_qnona, 
+                          nga_wpnona$`pct_non-functional`,
+                          order =10 ,
+                          method = "I",
+                          style = "W")
+
+plot(MI_corr)
+```
+
+To check for statistical significance of the spatial auto correlation
+
+```{r}
+print(MI_corr)
+```
+
+Up to order= 7 is statistically significant
+
+### 2.2 Compute Geary's C correlogram
+
+```{r}
+set.seed(1234)
+
+bpermgeary = geary.mc(nga_wpnona$`pct_non-functional`,
+                 listw=rswm_qnona,
+                 nsim=999,
+                 zero.policy= TRUE,)
+
+bpermgeary
+```
+
+```{r}
+GC_corr <- sp.correlogram(wm_qnona, 
+                          nga_wpnona$`pct_non-functional`,
+                          order =10 ,
+                          method = "C",
+                          style = "W")
+
+plot(GC_corr)
+```
+
+```{r}
+print(GC_corr)
+```
+
+## 3 Cluster and Outlier Analysis
+
+### 3.1 Computing local Moran's I
+
+```{r}
+localMI <- localmoran(nga_wpnona$`pct_non-functional`,rswm_qnona)
+head(localMI)
+```
+
+### 3.2 Append local Moran's I to nga_wpnona shapefile
+
+```{r}
+nga_wpnona.localMI <- cbind(nga_wpnona,localMI)%>%
+  rename(Pr.Ii = Pr.z....E.Ii..)  
+#rename the last column 
+#colnames(bperm.df)[1] <- 'res'
+head(nga_wpnona.localMI)
+```
+
+### 3.3 Mapping both  local Moran's I and its p-value
+
+```{r}
+localMI.map <- tm_shape(nga_wpnona.localMI)+
+  tm_fill(col='Ii',
+          style="pretty",
+          palette = "RdBu",
+          title = "local Moran statistics") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "Local Moran' I statistic",
+            main.title.size=0.8,
+            legend.height = 0.2,
+            legend.width = 0.2)
+
+pvalue.map <- tm_shape(nga_wpnona.localMI)+
+  tm_fill(col='Pr.Ii',
+          breaks = c(-Inf,0.001,0.01,0.05,0.1,Inf),
+          palette = "-Blues",
+          title = "local Moran statistics") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "Local Moran' p-values",
+            main.title.size=0.8,
+            legend.height = 0.2,
+            legend.width = 0.2)
+
+tmap_arrange(localMI.map, pvalue.map, asp=1, ncol=2)
+```
+
+### 3.4 Steps in creating a LISA Cluster Map
+
+#### 3.4.1 Plotting the Moran scatterplot
+
+```{r}
+nci <- moran.plot(nga_wpnona$`pct_non-functional`,
+                  rswm_qnona,
+                  labels=as.character(nga_wpnona$shapeName),
+                  xlab = "Pct Non-functional pumps",
+                  ylab="Spatially Lag Pct Non-functional pumps")
+```
+
+But we do not know which values are significant and which values are not. We also do not need to standardise the Pct non-functional pumps as % is already considered as standardised.
+
+#### 3.4.2 Preparing LISA map classes
+
+```{r}
+quadrant <- vector(mode = "numeric", length = nrow(localMI))
+quadrant
+```
+
+Next, derive the lagged variable of interest (Pct Non-functional pumps) and center the spatially lagged variable around its mean
+
+```{r}
+nga_wpnona$lag_PctNonFunc <- lag.listw(rswm_qnona, nga_wpnona$`pct_non-functional`)
+DV <- nga_wpnona$lag_PctNonFunc - mean(nga_wpnona$lag_PctNonFunc)
+class(DV)
+```
+
+Center the local Moran\'s around the mean
+
+The first col \[ , 1\] of the localMI matrix contains LocalMoran\'s I values
+
+```{r}
+LM_I <- localMI[,1] - mean(localMI[,1])
+class(LM_I)
+```
+
+Next, we will set a statistical significance level for the local Moran.
+
+```{r}
+signif <- 0.05
+```
+
+-   These four command lines define the low-low (1), low-high (2), high-low (3) and high-high (4) categories.
+
+-   Here, are we using filters? Using DV and LM_I vectors to assign value of 1 to quadrant vector (init as all 0)
+
+-   DV \< 0 means GDPPC spatial lag is lower than mean.; spatial lag is low?
+
+-   LM_I \< 0 means Local Moran I value is less than mean. **LISA of an observation gives an indication of the extent of significant spatial clustering of similar values around that observation.** When LM_I \> 0 means clustering of HH or LL values. When LM_I \< 0 means dispersion of HL or LH values.
+
+```{r}
+quadrant[DV < 0 & LM_I > 0] <- 1 # low-low
+quadrant
+```
+
+```{r}
+quadrant[DV > 0 & LM_I < 0] <- 2 # low- high
+quadrant[DV < 0 & LM_I < 0] <- 3 # high- low
+quadrant[DV > 0 & LM_I > 0] <- 4 # high-high
+quadrant
+```
+
+-   lastly, place non-significant Moran in the category 0
+
+```{r}
+quadrant[localMI[,5]>signif] <- 0
+quadrant
+```
+
+Combining all together
+
+```{r}
+#| eval: false
+quadrant <- vector(mode="numeric",length=nrow(localMI))
+hunan$lag_GDPPC <- lag.listw(rswm_q, hunan$GDPPC)
+DV <- hunan$lag_GDPPC - mean(hunan$lag_GDPPC)     
+LM_I <- localMI[,1]   
+signif <- 0.05       
+quadrant[DV <0 & LM_I>0] <- 1
+quadrant[DV >0 & LM_I<0] <- 2
+quadrant[DV <0 & LM_I<0] <- 3  
+quadrant[DV >0 & LM_I>0] <- 4    
+quadrant[localMI[,5]>signif] <- 0
+```
+
+#### 3.4.3 Plotting LISA Map
+
+```{r}
+nga_wpnona.localMI$quadrant <- quadrant
+colours <- c("#ffffff", "#2c7bb6", "#abd9e9", "#fdae61", "#d7191c")
+clusters <- c("insignificant", "low-low", "low-high", "high-low", "high-high")
+
+tm_shape(nga_wpnona.localMI) +
+  tm_fill(col = 'quadrant',
+          palette= colours[c(sort(unique(quadrant))) + 1],
+          labels = clusters[c(sort(unique(quadrant))) + 1],
+          popups.var = c("")) +
+  tm_view(set.zoom.limits = c(11,17)) +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.2,
+            legend.width = 0.2)
+```
+
+```{r}
+
+wp_nonfunctional <- qtm(nga_wpnona, "pct_non-functional") +
+  tm_layout(legend.width = 0.3,
+            legend.height = 0.3)
+
+LISAmap <- tm_shape(nga_wpnona.localMI) +
+  tm_fill(col = 'quadrant',
+          palette= colours[c(sort(unique(quadrant))) + 1],
+          labels = clusters[c(sort(unique(quadrant))) + 1],
+          popups.var = c("")) +
+  tm_view(set.zoom.limits = c(11,17)) +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.2,
+            legend.width = 0.2)
+
+tmap_arrange(wp_nonfunctional, LISAmap, 
+             asp = 1, ncol =2)
+```
+
+#### 
+
+
+
+
+
+
+
+
