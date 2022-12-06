@@ -903,12 +903,99 @@ The *skater()* takes **three mandatory** arguments:
 
 \- the data matrix (to update the costs as units are being grouped), and
 
- - the number of cuts. Note: It is set to **one less than the number of clusters**. So, the value specified is **not** the number of clusters, but the number of cuts in the graph, one less than the number of clusters.
+-   the number of cuts. Note: It is set to **one less than the number of clusters**. So, the value specified is **not** the number of clusters, but the number of cuts in the graph, one less than the number of clusters.
 
-The result of the *skater()* is an object of class **skater**. We can examine its contents by using the code chunk below.
+The result of the *skater()* is an object of **class** **skater**. We can examine its contents by using the code chunk below.
 
 ```{r}
 str(clust6)
 ```
 
+Using str(clust6), we can see several results:
+
+1.  clust6\$groups shows us the cluster number each polygon is assigned to.
+2.  detailed summary for each of the clusters in the edges.groups list, containing the node, edge and ssw??
+3.  Sum of squares measures are given as ssto for the total and ssw to show the effect of each of the cuts on the overall criterion.
+
+We can check the cluster assignment by using the conde chunk below.
+
+```{r}
+ccs6 <- clust6$groups
+ccs6
+```
+
+We can find out how many observations are in each cluster by means of the table command. Parenthetially, we can also find this as the dimension of each vector in the lists contained in edges.groups. For example, the first list has node with dimension 12, which is also the number of observations in the first cluster.
+
+Freq table
+
+```{r}
+table(ccs6)
+```
+
+Lastly, we can also plot the pruned tree that shows the five clusters on top of the townshop area.
+
+```{r}
+plot(shan_sp , border = grey(.5))
+
+plot(clust6,
+     coords = coordinates(shan_sp),
+     cex.lab = .7,
+     groups.colors=c("red","green","blue", "brown", "pink"),
+     cex.circles = 0.005,
+     add=TRUE)
+```
+
 ### 5.8.6 Visualising the clusters in choropleth map
+
+The code chunk below is used to plot the newly derived clusters by using SKATER method.
+
+First, set the cluster groups as matrix to get it ready to be appended to shan_sf_cluster (from shan_sf + hierarchical clustering results) to get another data frame called shan_sf_spatialcluster
+
+```{r}
+groups_mat <- as.matrix(clust6$groups)
+head(groups_mat)
+```
+
+Append it to the shan_sf_cluster sf data frame
+
+```{r}
+shan_sf_spatialcluster <- cbind(shan_sf_cluster, 
+                                as.factor(groups_mat)) %>% 
+  rename('SP_CLUSTER' = 'as.factor.groups_mat.')
+
+qtm(shan_sf_spatialcluster, 'SP_CLUSTER')
+```
+
+Notice this is mainly spatial relationship and some on attribute relationship but inflexibility to change the threshold.
+
+For easy comparison, it will be better to place both the [hierarchical clustering]{.underline} and [spatially constrained hierarchical clustering maps]{.underline} next to each other.
+
+```{r}
+hclust.map <- qtm(shan_sf_cluster,
+                  'CLUSTER') +
+  tm_borders(alpha = 0.5)
+
+skclust.map <- qtm(shan_sf_spatialcluster,
+                   'SP_CLUSTER') +
+  tm_borders(alpha=0.5)
+
+tmap_arrange(hclust.map, skclust.map,
+             asp =NA, ncol =2)
+
+```
+
+Both clustering methods are very rigid. One considered 100% attribute relationship and resulted in fragmented choropleth map. The other considers mainly spatial relationship.
+
+Yi Xin fooling around with K-means clustering, non spatial data
+
+```{r}
+k6 <- kmeans(shan_ict, centers = 6, nstart = 25)
+str(k6)
+```
+
+```{r}
+cluster_plot <- fviz_cluster(k6, data = shan_ict, labelsize=7)
+cluster_plot
+```
+
+### 
