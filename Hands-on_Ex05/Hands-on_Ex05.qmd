@@ -50,7 +50,7 @@ Both data sets are download from [Myanmar Information Management Unit (MIMU)](ht
 ### 5.3.1 Installing and loading R packages
 
 ```{r}
-pacman::p_load(rgdal, spdep, tmap, sf, 
+pacman::p_load(rgdal, spdep, tmap, sf, ClustGeo, 
                ggpubr, cluster, factoextra, NbClust,
                heatmaply, corrplot, psych, tidyverse)
 ```
@@ -949,14 +949,14 @@ plot(clust6,
 
 The code chunk below is used to plot the newly derived clusters by using SKATER method.
 
-First, set the cluster groups as matrix to get it ready to be appended to shan_sf_cluster (from shan_sf + hierarchical clustering results) to get another data frame called shan_sf_spatialcluster
+First, set the cluster groups as matrix (as.matrix means table form) to get it ready to be appended to shan_sf_cluster (from shan_sf + hierarchical clustering results) to get another data frame called shan_sf_spatialcluster
 
 ```{r}
 groups_mat <- as.matrix(clust6$groups)
 head(groups_mat)
 ```
 
-Append it to the shan_sf_cluster sf data frame
+Append it to the shan_sf_cluster sf data frame because tmap prefers sf to sp object.. Avoid sorting to prevent appending issues.
 
 ```{r}
 shan_sf_spatialcluster <- cbind(shan_sf_cluster, 
@@ -985,6 +985,129 @@ tmap_arrange(hclust.map, skclust.map,
 ```
 
 Both clustering methods are very rigid. One considered 100% attribute relationship and resulted in fragmented choropleth map. The other considers mainly spatial relationship.
+
+## 5.9 Spatially Constrained Clustering: ClustGeo Method
+
+In this section, you will gain hands-on experience on using functions provided by **ClustGeo** package to perform non-spatially constrained hierarchical cluster analysis and spatially constrained cluster analysis.
+
+### 5.9.1 A short note about ClustGeo package (only Ward method for hierachical clsutering,  can use any distance method or proximity matrix)
+
+[ClustGeo](https://cran.r-project.org/web/packages/ClustGeo/) package is an R package specially designed to support the need of performing spatially constrained cluster analysis. More specifically, it provides a **Ward-like hierarchical clustering algorithm** called `hclustgeo()` including spatial/geographical constraints.
+
+In the nutshell, the algorithm uses two dissimilarity matrices D0 and D1 along with a mixing parameter alpha, whereby the value of alpha must be a real number between \[0, 1\].
+
+D0 can be non-Euclidean and the weights of the observations can be non-uniform. It gives the dissimilarities in the **attribute/clustering variable space**.
+
+D1, on the other hand, gives the dissimilarities in the **constraint space**. The criterion minimised at each stage is a convex combination of the homogeneity criterion calculated with D0 and the homogeneity criterion calculated with D1.
+
+The idea is then to determine a value of alpha which increases the spatial contiguity without deteriorating too much the quality of the solution based on the variables of interest. This need is supported by a function called `choicealpha()`.
+
+### 5.9.2 Ward-like hierarchical clustering: ClustGeo
+
+ClustGeo package provides function called `hclustgeo()` to perform a typical Ward-like hierarchical clustering just like `hclust()` you learned in previous section.
+
+To perform non-spatially constrained hierarchical clustering, we only need to provide the function a dissimilarity matrix as shown in the code chunk below.
+
+```{r}
+nongeo_cluster <- hclustgeo(proxmat)
+plot(nongeo_cluster, cex = 0.5)
+rect.hclust(nongeo_cluster,
+            k=6,
+            border= 2:5)
+```
+
+Note that the dissimilarity matrix must be an object of class `dist`, i.e. an object obtained with the function `dist()`. For sample code chunk, please refer to [5.7.6 Computing proximity matrix](https://r4gdsa.netlify.app/chap05.html#computing-proximity-matrix)
+
+#### 5.9.2.1 Mapping the clusters formed
+
+Similarly to what we have done earlier, convert the cluster ID to **categorical data**, and then to **a matrix (means table form).** Finally append it to shan_sf, creating a new data frame called shan_sf_nongeo_cluster
+
+```{r}
+groups <- as.factor(cutree(nongeo_cluster, k=6))
+```
+
+```{r}
+shan_sf_nongeo_cluster <- cbind(shan_sf, as.matrix(groups)) %>%
+  rename(`CLUSTER` = `as.matrix.groups.`)
+```
+
+```{r}
+qtm(shan_sf_nongeo_cluster,'CLUSTER')
+```
+
+The same old fragmented map above.
+
+### 5.9.3 Spatially Constrained Hierarchical Clustering
+
+Before we can performed spatially constrained hierarchical clustering, a **spatial** [distance matrix]{.underline} will be derived by using [`st_distance()`](https://r-spatial.github.io/sf/reference/geos_measures.html) of sf package. (Earlier we had use proxmat, a distance matrix based on attributes)
+
+```{r}
+dist <- st_distance(shan_sf,shan_sf)
+class(dist)
+distmat <- as.dist(dist)
+class(distmat)
+```
+
+Notice that `as.dist()` is used to convert the data frame into matrix.
+
+Next, `choicealpha()` will be used to determine a suitable value for the mixing parameter alpha as shown in the code chunk below.
+
+First argument is non-spatial proxmat, and the second argument is the spatial distmat.
+
+Min is 0, max is 1 and in steps of 0.1
+
+K is in uppercase
+
+```{r}
+cr <- choicealpha(proxmat, distmat,
+                  range.alpha = seq(0,1, 0.1),
+                  K =6,
+                  graph = TRUE)
+```
+
+Y-axis refers to the amount of spatial or non-spatial relationship captured
+
+D0: attribute homogeneity (black line)
+D1: spatial homogeneity, contiguity matrix (red line)
+choicealpha- balance attribute and spatial homogeneity
+
+[**cut-off values**]{.underline}
+
+1\. when alpha = 0, consider only attribute relationship
+
+2\. when alpha = 1, we consider only the spatial relationship
+
+In short, increase alpha increase spatial relationship.
+
+At cut-off value of 0.3, lose only about 20% of black and capture about 70% of red. This is he most balanced value. At any cut-off bigger than 0.3, we lose black info at a greater rate and gain red info at a slower rate.
+
+There are two graphs here, Qnorm means the normalised value. Use Qnorm when skewness is big.
+
+With reference to the graphs above, alpha = 0.3 will be used as shown in the code chunk below.
+
+```{r}
+clustG <- hclustgeo(proxmat, distmat, alpha = 0.3)
+clustG
+```
+
+Next, `cutree()` is used to derive the cluster objecct.
+
+```{r}
+groups <- as.factor(cutree(clustG, k=6))
+```
+
+We will then join back the group list with *shan_sf* polygon feature data frame by using the code chunk below.
+
+```{r}
+shan_sf_Gcluster <- cbind(shan_sf, as.matrix(groups)) %>%
+  rename(`CLUSTER` = `as.matrix.groups.`)
+```
+
+We can now plot the map of the newly delineated spatially constrained clusters.
+
+```{r}
+qtm(shan_sf_Gcluster, "CLUSTER")
+```
 
 Yi Xin fooling around with K-means clustering, non spatial data
 
