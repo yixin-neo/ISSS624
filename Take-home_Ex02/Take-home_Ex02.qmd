@@ -553,7 +553,6 @@ In R, many packages provide functions to calculate distance matrix. We will comp
 
 ```{r}
 proxmat <- dist(nga_hclust_var.std, method = 'euclidean')
-proxmat
 ```
 
 ```{r}
@@ -739,8 +738,10 @@ groups <- as.factor(cutree(hclust_ward, k=5))
 ```
 
 ```{r}
-attributes(groups)
+#| eval: false
 str(groups)
+attributes(groups)
+
 ```
 
 \$levels
@@ -751,7 +752,9 @@ str(groups)
 
 \[1\] "Aba North" "Aba South" "Abadam" "Abaji" "Abak" "Abakaliki"
 
-\[7\] "Abeokuta North" "Abeokuta South" "Abi" "Aboh-Mbaise" "Abua/Odual" "Abuja Municipal"
+\[7\] "Abeokuta North" "Abeokuta South" "Abi" "Aboh-Mbaise" "Abua/Odual" "Abuja Municipal" ...
+
+\[771\] "Zaria" "Zing" "Zurmi" "Zuru"
 
 The output ***groups*** is a *list* object.
 
@@ -761,7 +764,7 @@ The code chunk below form the join in three steps:
 
 -   the *groups* list object will be converted into a matrix;
 
--   *cbind()* is used to append *groups* matrix onto shan_sf to produce an output simple feature object called `shan_sf_cluster`; and
+-   *cbind()* is used to append *groups* matrix (aka table) onto nga_wp2 (a sf obj) to produce an output simple feature object called `nga_hclust_var_std_cluster`; and
 
 -   *rename* of **dplyr** package is used to rename *as.matrix.groups* field as *CLUSTER*.
 
@@ -981,7 +984,7 @@ List of 3
 
 ### 4.4 Computing minimum spanning tree (Each polygon has exactly one neighbour)
 
-The minimum spanning tree is computed by mean of the [*mstree()*](https://r-spatial.github.io/spdep/reference/mstree.html) of **spdep** package as shown in the code chunk below.
+The minimum spanning tree is computed by mean of the [*mstree()*](https://r-spatial.github.io/spdep/reference/mstree.html) of **spdep** package as shown in the code chunk below. this mstree() function constructs the minimum cost for each polygon to have exactly one neighbour?
 
 ```{r}
 nga.mst <- mstree(nga.w)
@@ -999,7 +1002,13 @@ Note that the dimension is 772 and not 773. This is because the minimum spanning
 
 Yi xin: We can display the content of *nga.mst* by using *head()* as shown in the code chunk below. There are 772 edges in total, but we display only five here. The first node polygon 631 and the minimum cost is 0.72899 to travel to polygon 632. The tree path is created by considering the minimum cost path from all available paths. The cost is calculated using the neighbours list first, then ICT variables . Each polygon has exactly one neighbour in the Minimum Spanning Tree. This is 100% geospatial relationship as consider neighbour list first.
 
+[**Data format changes in hands-on5 and take-home2**]{.underline}
+
 shan_sf -\> shan_sp -\> shan.nb -\> lcost = nbcosts(shan.nb, shan_ict) -\> shan.w= nb2listw(shan.nb, glist=lcost, style ='B') -\> shan.mst \<- mstree(shan.w)
+
+nga_wp2 -\> nga_wp2_sp -\> nga_wp2.nb -\> lcost = nbcosts(nga_wp2.nb, nga_hclust_var.std) -\> nga.w = nb2listw(nga_wp2.nb, glist=lcost, style ='B') -\> nga.mst \<- mstree(nga.w)
+
+nga_hclust_var.std is the clustering non-geo matrix i used to construct the proximity obj for h-clustering
 
 ```{r}
 head(nga.mst)
@@ -1095,6 +1104,8 @@ groups_mat <- as.matrix(clust5$groups)
 head(groups_mat)
 ```
 
+Append it to the shan_sf_cluster sf data frame because tmap prefers sf to sp object.. Avoid sorting to prevent appending issues.
+
 ```{r}
 nga_sf_spatialcluster <- cbind(nga_hclust_var_std_cluster[-86,], 
                                 as.factor(groups_mat)) %>% 
@@ -1120,3 +1131,191 @@ skclust.map <- qtm(nga_sf_spatialcluster,
 tmap_arrange(hclust.map, skclust.map,
              asp =NA, ncol =2)
 ```
+
+The plot on the left is 100% based on attribute relationship while the plot on the right is based mainly on spatial relationship. To get a plot that enables us to vary the cut-off value for balance between attributes and spatial relationship, we can consider the spatially constrained clustering via the ClustGeo method, all for its choicealpha() function.
+
+## 5 Spatially Constrained Clustering: ClustGeo Method
+
+I will use **ClustGeo** package to perform [non-spatially constrained hierarchical cluster analysis]{.underline} and [spatially constrained cluster analysis.]{.underline}
+
+### 5.1 A short note about ClustGeo package (only Ward method for hierachical clsutering, can use any distance method or proximity matrix)
+
+[ClustGeo](https://cran.r-project.org/web/packages/ClustGeo/) package is an R package specially designed to support the need of performing spatially constrained cluster analysis. More specifically, it provides a **Ward-like hierarchical clustering algorithm** called `hclustgeo()` including spatial/geographical constraints.
+
+In the nutshell, the algorithm uses two dissimilarity matrices D0 and D1 along with a mixing parameter alpha, whereby the value of alpha must be a real number between \[0, 1\].
+
+D0 can be non-Euclidean and the weights of the observations can be non-uniform. It gives the dissimilarities in the **attribute/clustering variable space**.
+
+D1, on the other hand, gives the dissimilarities in the **constraint space**. The criterion minimised at each stage is a convex combination of the homogeneity criterion calculated with D0 and the homogeneity criterion calculated with D1.
+
+The idea is then to determine a value of alpha which increases the spatial contiguity without deteriorating too much the quality of the solution based on the variables of interest. This need is supported by a function called `choicealpha()`.
+
+### 5.2 Ward-like hierarchical clustering: ClustGeo
+
+ClustGeo package provides function called `hclustgeo()` to perform a typical Ward-like hierarchical clustering just like `hclust()` you learned in previous section.
+
+To perform non-spatially constrained hierarchical clustering, we only need to provide the function a dissimilarity matrix as shown in the code chunk below
+
+```{r}
+nongeo_cluster <-hclustgeo(proxmat)
+plot(nongeo_cluster, cex =0.5)
+rect.hclust(nongeo_cluster, 
+            k=5,
+            border = 2:6)
+```
+
+Note that the dissimilarity matrix must be an object of class `dist`, i.e. an object obtained with the function `dist()`. For sample code chunk, please refer to [5.7.6 Computing proximity matrix](https://r4gdsa.netlify.app/chap05.html#computing-proximity-matrix)
+
+#### 5.2.1 Mapping the clusters formed
+
+Similarly to what we have done earlier, convert the cluster ID to **categorical data**, and then to **a matrix (means table form).** Finally append it to nga_wp2 (sf obj), creating a new data frame called **nga_sf_nongeo_cluster**
+
+```{r}
+groups <- as.factor(cutree(nongeo_cluster, k=5))
+```
+
+```{r}
+nga_sf_nongeo_cluster <- cbind(nga_wp2, as.matrix(groups)) %>%
+  rename(`CLUSTER` = `as.matrix.groups.`)
+```
+
+```{r}
+qtm(nga_sf_nongeo_cluster,'CLUSTER')
+```
+
+### 5.3 Spatially Constrained Hierarchical Clustering
+
+Before we can performed spatially constrained hierarchical clustering, a **spatial** [distance matrix]{.underline} will be derived by using [`st_distance()`](https://r-spatial.github.io/sf/reference/geos_measures.html) of sf package. (Earlier we had use proxmat, a distance matrix based on attributes)
+
+```{r}
+dist <- st_distance(nga_wp2,nga_wp2)
+class(dist)
+```
+
+```{r}
+distmat <- as.dist(dist)
+class(distmat)
+```
+
+Notice that `as.dist()` is used to convert the data frame into matrix.
+
+Next, `choicealpha()` will be used to determine a suitable value for the mixing parameter alpha as shown in the code chunk below.
+
+First argument is non-spatial proxmat, and the second argument is the spatial distmat.
+
+Min is 0, max is 1 and in steps of 0.1
+
+K is in uppercase
+
+```{r}
+cr <- choicealpha(proxmat, distmat,
+                  range.alpha = seq(0,1, 0.1),
+                  K =5,
+                  graph = TRUE)
+```
+
+Y-axis refers to the amount of spatial or non-spatial relationship captured
+
+D0: attribute homogeneity (black line) D1: spatial homogeneity, contiguity matrix (red line) choicealpha- balance attribute and spatial homogeneity
+
+[**cut-off values**]{.underline}
+
+1\. when alpha = 0, consider only attribute relationship
+
+2\. when alpha = 1, we consider only the spatial relationship
+
+In short, increase alpha increase spatial relationship.
+
+At cut-off value of 0.35, lose only about 20% of black and capture about 70% of red. This is he most balanced value. At any cut-off bigger than 0.3, we lose black info at a greater rate and gain red info at a slower rate.
+
+There are two graphs here, Qnorm means the normalised value. Use Qnorm when skewness is big.
+
+With reference to the graphs above, alpha = 0.35 will be used as shown in the code chunk below.
+
+```{r}
+clustG <- hclustgeo(proxmat, distmat, alpha = 0.35)
+clustG
+```
+
+Next, `cutree()` is used to derive the cluster object.
+
+```{r}
+groups <- as.factor(cutree(clustG, k=5))
+```
+
+We will then join back the group list with *nga_wp2* polygon simple feature data frame by using the code chunk below.
+
+```{r}
+nga_sf_Gcluster <- cbind(nga_wp2, as.matrix(groups)) %>%
+  rename(`CLUSTER` = `as.matrix.groups.`)
+```
+
+We can now plot the map of the newly delineated spatially constrained clusters.
+
+```{r}
+qtm(nga_sf_Gcluster, "CLUSTER")
+```
+
+```{r}
+nga_sf_Gcluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            min = min(pct_non.functional),
+            q1 = quantile(pct_non.functional, 0.25),
+            median = median(pct_non.functional),
+            mean=mean(pct_non.functional),
+            q3 = quantile(pct_non.functional, 0.75),
+            max = max(pct_non.functional))
+```
+
+```{r}
+nga_sf_Gcluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            min = min(pct_functional),
+            q1 = quantile(pct_functional, 0.25),
+            median = median(pct_functional),
+            mean=mean(pct_functional),
+            q3 = quantile(pct_functional, 0.75),
+            max = max(pct_functional))
+```
+
+```{r}
+nga_sf_Gcluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            min = min(pct_rural),
+            q1 = quantile(pct_rural, 0.25),
+            median = median(pct_rural),
+            mean=mean(pct_rural),
+            q3 = quantile(pct_rural, 0.75),
+            max = max(pct_rural))
+```
+
+```{r}
+nga_sf_Gcluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            min = min(pct_handpump),
+            q1 = quantile(pct_handpump, 0.25),
+            median = median(pct_handpump),
+            mean=mean(pct_handpump),
+            q3 = quantile(pct_handpump, 0.75),
+            max = max(pct_handpump))
+```
+
+```{r}
+nga_sf_Gcluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            min = min(pct_qualityok),
+            q1 = quantile(pct_qualityok, 0.25),
+            median = median(pct_qualityok),
+            mean=mean(pct_qualityok),
+            q3 = quantile(pct_qualityok, 0.75),
+            max = max(pct_qualityok))
+```
+
+Note: **nga_hclust_var_std_cluster**, (hierachical sf) **nga_sf_spatialcluster** (skater sf), **nga_sf_nongeo_cluster** (clustgeo hierarchical cluster sf) , **nga_sf_Gcluster** (spatial geo cluster)
+
+
