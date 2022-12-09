@@ -1,0 +1,1122 @@
+---
+title: "Take-home_Ex02"
+editor: visual
+---
+
+```{r}
+pacman::p_load(rgdal, spdep, tmap, sf, ClustGeo, 
+               ggpubr, cluster, factoextra, NbClust,
+               heatmaply, corrplot, psych, tidyverse, funModeling)
+```
+
+### Importing water point geospatial data from wp.rds
+
+Loading wp.rds file which is exactly the same as the 'geoboundary' shapefiles. However this wp.rds file is still 143 MB is in size.
+
+```{r}
+#| eval: false
+wp_nga <- read_rds('geodata/wp_nga.rds') 
+```
+
+**#\| eval: false** is only display the codes between 41-44 without running the code.  Note that by default, eval: true is used so you do not have to specify.
+
+### Importing Nigeria LGA BOUNDARY data
+
+Now, we are going to import the LGA boundary data into R environment by using the code chunk below.
+
+```{r}
+#| eval: false
+nga <- st_read(dsn = 'geodata',
+               layer = 'geoBoundaries-NGA-ADM2',
+               crs= '4326')
+```
+
+```{r}
+#| eval: false
+nga <- st_set_crs(nga, 4326)
+st_crs(nga)
+```
+
+```{r}
+#| eval: false
+glimpse(nga)
+```
+
+```{r}
+#| eval: false
+qtm(nga, 'shapeName') +
+  tm_layout(legend.outside = TRUE)
+```
+
+Use a group_by function to identify states with same LGA names in the wp_nga attributes file.
+
+```{r}
+#| eval: false
+check_spelling1<- wp_nga %>% group_by(clean_adm2, clean_adm1) %>% summarise(count=n())
+```
+
+```{r}
+#| eval: false
+duplicated(check_spelling1$clean_adm2)
+```
+
+```{r}
+#| eval: false
+check_spelling1$clean_adm2[duplicated(check_spelling1$clean_adm2)]
+```
+
+We can see that the following LGA's names are present in two states. We will distinguish them by using the convention "Bassa_Kogi" and "Bassa_Plateau" etc..
+
+Bassa - Kogi and Plateau
+
+Ifelodun - Kwara and Osun
+
+Irepodun - Kwara and Osun
+
+Nasarawa- Kano and Nasawara
+
+Obi - Benue and Nasarawa
+
+Surulere - Lagos and Oyo
+
+**How to replace values in a Data Frame in R**
+
+https://datatofish.com/replace-values-dataframe-r/
+
+**R -- Replace Character in a String using gsub and str_replace_all**
+
+https://sparkbyexamples.com/r-programming/replace-character-in-a-string-of-r-dataframe/#:\~:text=How%20to%20replace%20a%20single,from%20dplyr%20package%20of%20R.
+
+```{r}
+#| eval: false
+#filter means we are left with only the fitered rows, so its not appropriate here
+wp_nga2 <- wp_nga %>%  filter(clean_adm1 == 'Kano' & clean_adm2 == 'Nasarawa') %>% 
+  mutate(clean_adm2 = gsub('Nasarawa','Nasarawa_Kano',clean_adm2))
+```
+
+Correct the LGA names under the correct state
+
+```{r}
+#| eval: false
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Kogi' & wp_nga$clean_adm2 == 'Bassa'] <- 'Bassa_Kogi'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Plateau' & wp_nga$clean_adm2 == 'Bassa'] <- 'Bassa_Plateau'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Kano' & wp_nga$clean_adm2 == 'Nasarawa'] <- 'Nasarawa_Kano'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Nasarawa' & wp_nga$clean_adm2 == 'Nasarawa'] <- 'Nasarawa_Nasarawa'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Kwara' & wp_nga$clean_adm2 == 'Ifelodun'] <- 'Ifelodun_Kwara'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Osun' & wp_nga$clean_adm2 == 'Ifelodun'] <- 'Ifelodun_Osun'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Kwara' & wp_nga$clean_adm2 == 'Irepodun'] <- 'Irepodun_Kwara'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Osun' & wp_nga$clean_adm2 == 'Irepodun'] <- 'Irepodun_Osun'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Benue' & wp_nga$clean_adm2 == 'Obi'] <- 'Obi_Benue'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Nasarawa' & wp_nga$clean_adm2 == 'Obi'] <- 'Obi_Nasarawa'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Lagos' & wp_nga$clean_adm2 == 'Surulere'] <- 'Surulere_Lagos'
+
+wp_nga$clean_adm2 [wp_nga$clean_adm1 == 'Oyo' & wp_nga$clean_adm2 == 'Surulere'] <- 'Surulere_Oyo'
+```
+
+Use group_by to check again that the LGA names have been properly labelled with the state name at the back.
+
+```{r}
+#| eval: false
+check_spelling2<- wp_nga %>% group_by(clean_adm2, clean_adm1) %>% summarise(count=n())
+check_spelling2$clean_adm2[duplicated(check_spelling2$clean_adm2)]
+```
+
+The value_counts() equivalent command in R
+
+```{r}
+#| eval: false
+dplyr::count(wp_nga, clean_adm2, sort = TRUE)
+```
+
+## Data Wrangling
+
+### Recoding NA values into string
+
+In the code chunk below, `replace_na()` is used to recode all the *NA* values in *status_cle* field into *Unknown*. Need to replace or else we cannot accurately determine the total number of water points later.
+
+```{r}
+#| eval: false
+wp_nga <- wp_nga %>% 
+  mutate(status_cle = replace_na(status_cle, 'Unknown'))
+```
+
+Check after replacing Na with "Unknown"
+
+```{r}
+#| eval: false
+dplyr::count(wp_nga, status_cle, sort = TRUE)
+```
+
+### EDA
+
+In the code chunk below, `freq()` of **funModeling** package is used to display the distribution of *status_cle* field in *wp_nga*.
+
+```{r}
+#| eval: false
+freq (data = wp_nga,
+      input = 'status_cle')
+```
+
+## Extracting Water Point Data
+
+### Extracting functional water point
+
+```{r}
+#| eval: false
+wpt_functional <- wp_nga %>% 
+  filter(status_cle %in%
+           c('Functional',
+             'Functional but not in use',
+             'Functional but needs repair'))
+```
+
+Rechecking the viz
+
+```{r}
+#| eval: false
+freq (data = wpt_functional,
+      input = 'status_cle')
+```
+
+### Extracting non-functional water point
+
+In the code chunk below, `filter()` of dplyr is used to select non-functional water points.
+
+```{r}
+#| eval: false
+wpt_nonfunctional <- wp_nga %>% 
+  filter(status_cle %in%
+           c("Abandoned/Decommissioned", 
+             "Abandoned",
+             "Non-Functional",
+             "Non functional due to dry season",
+             "Non-Functional due to dry season"))
+```
+
+### Extracting water point with Unknown class
+
+```{r}
+#| eval: false
+wpt_unknown <- wp_nga %>% 
+  filter(status_cle=="Unknown")
+```
+
+## Extracting Hand pump Data
+
+Visualise the 'X_water_tec' variable
+
+```{r}
+#| eval: false
+wp_nga <- wp_nga %>% 
+  mutate(X_water_tec = replace_na(X_water_tec, 'Unknown'))
+```
+
+```{r}
+#| eval: false
+freq (data = wp_nga,
+      input = 'X_water_tec')
+```
+
+```{r}
+#| eval: false
+wpt_handpump <- wp_nga %>% 
+  filter(X_water_tec %in% "Hand Pump")
+```
+
+## Extracting Usage Capacity Data
+
+Visualising
+
+```{r}
+#| eval: false
+freq (data = wp_nga,
+      input = 'usage_cap')
+```
+
+```{r}
+#| eval: false
+wpt_usagecapless1000 <- wp_nga %>% 
+  filter(usage_cap <1000)
+```
+
+```{r}
+#| eval: false
+wpt_usagecap1000 <- wp_nga %>% 
+  filter(usage_cap ==1000)
+```
+
+## Extracting Urban and rural Data
+
+Visualising
+
+```{r}
+#| eval: false
+freq (data = wp_nga,
+      input = 'is_urban')
+```
+
+```{r}
+#| eval: false
+wpt_rural <- wp_nga %>% 
+  filter(is_urban %in% "False")
+```
+
+## Extracting water quality Data
+
+```{r}
+#| eval: false
+wp_nga <- wp_nga %>% 
+  mutate(subjective = replace_na(subjective, 'Unknown'))
+```
+
+```{r}
+#| eval: false
+freq (data = wp_nga,
+      input = 'subjective')
+```
+
+```{r}
+#| eval: false
+wpt_qualityok <- wp_nga %>% 
+  filter(subjective %in%
+           c("Acceptable quality", 
+             "Within National standards (potable)",
+             "Within National limits (potable)"))
+```
+
+## Performing Point-in-Polygon Count
+
+Finding the points ID that lies in each of the 774 polygon. The command below helps us to identify the total number of water points in the 774 LGAs.
+
+```{r}
+#| eval: false
+st_intersects(nga,wp_nga)
+```
+
+Sparse geometry binary predicate list of length 774, where the predicate was \`intersects'
+
+First 10 elements:
+
+1: 2151, 2778, 4060, 5866, 6240, 6937, 7015, 54986, 55874, 56922, ...
+
+2: 968, 1112, 1154, 1172, 1247, 1299, 1337, 1348, 1506, 1553, ...
+
+3: (empty)
+
+4: 15502, 15707, 16704, 16979, 17047, 17069, 17531, 17967, 18444, 18542, ...
+
+Finding the total number of points in each polygon
+
+```{r}
+#| eval: false
+lengths(st_intersects(nga,wp_nga))
+```
+
+Output: \[1\] 17 71 0 57
+
+### Creating the data frame that we need for clustering by combining with nga geospatial file
+
+```{r}
+#| eval: false
+nga_wp <- nga %>% 
+  mutate(`total wpt` = lengths(st_intersects(nga, wp_nga))) %>%
+  mutate(`wpt functional` = lengths(st_intersects(nga, wpt_functional))) %>%
+  mutate(`wpt non-functional` = lengths(st_intersects(nga, wpt_nonfunctional))) %>%
+  mutate(`wpt unknown` = lengths(st_intersects(nga,wpt_unknown))) %>%
+  mutate(`wpt handpump` = lengths(st_intersects(nga,wpt_handpump))) %>%
+  mutate(`wpt usagecapless1000` = lengths(st_intersects(nga,wpt_usagecapless1000))) %>%
+  mutate(`wpt usagecap1000` = lengths(st_intersects(nga,wpt_usagecap1000))) %>%
+  mutate(`wpt rural` = lengths(st_intersects(nga,wpt_rural))) %>%
+  mutate(`wpt qualityok` = lengths(st_intersects(nga,wpt_qualityok))) %>% 
+  mutate(`clean_adm2` = wp_nga$clean_adm2)
+
+  
+  
+```
+
+### Computing %
+
+```{r}
+#| eval: false
+nga_wp <- nga_wp %>% 
+  mutate('pct_functional' = `wpt functional`/ `total wpt`) %>% 
+  mutate('pct_non-functional' = `wpt non-functional`/ `total wpt`) %>% 
+  mutate('pct_unknown' = `wpt unknown`/ `total wpt`) %>%
+  mutate('pct_handpump' = `wpt handpump`/ `total wpt`) %>%
+  mutate('pct_usagecapless1000' = `wpt usagecapless1000`/ `total wpt`) %>%
+  mutate('pct_usagecap1000' = `wpt usagecap1000`/ `total wpt`) %>%
+  mutate('pct_rural' = `wpt rural`/ `total wpt`) %>%
+  mutate('pct_qualityok' = `wpt qualityok`/ `total wpt`)
+
+```
+
+Replace all NaN values with zero
+
+```{r}
+#| eval: false
+nga_wp[is.na(nga_wp)]=0
+```
+
+## Saving the Analytical Data Table
+
+```{r}
+#| eval: false
+write_rds(nga_wp, 'geodata/nga_wp2.rds')
+```
+
+## 1 Reading the nga_wp2.rds file
+
+```{r}
+nga_wp2 <- readRDS('geodata/nga_wp2.rds')
+```
+
+### Visualising
+
+```{r}
+ls(nga_wp2)
+```
+
+```{r}
+tm_shape(nga_wp2) +
+    tm_polygons(c("total wpt", "pct_functional", "pct_non-functional", "pct_handpump", "pct_rural", "pct_usagecapless1000", "pct_usagecap1000","pct_qualityok"),
+                style="jenks") +
+    tm_facets(sync = TRUE, ncol = 2) +
+  tm_legend(legend.position = c("right", "bottom"))+
+  tm_layout(outer.margins=0, asp=0)
+```
+
+## 2 Correlation Analysis
+
+Remember for hierarchical clustering, there are three conditions to be met: (1) not to large a range (else standardisation) , (2) no missing values and (3) no multi-collinearity in the data variables.
+
+Before we perform cluster analysis, it is important for us to ensure that the cluster variables are not highly correlated.
+
+In this section, I will use [*corrplot.mixed()*](https://cran.r-project.org/web/packages/corrplot/corrplot.pdf) function of [**corrplot**](https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html) package to visualise and analyse the correlation of the input variables.
+
+```{r}
+str(nga_wp2)
+```
+
+```{r}
+head(nga_wp2[7:23])
+```
+
+Need to drop geometry column or else unable to check correlation **st_set_geometry(NULL)** will drop away the **geometry column.**
+
+```{r}
+clustv2 <- nga_wp2 %>% 
+  select(8:9, 16:23) %>% 
+  st_set_geometry(NULL)
+class(clustv2)
+clustv2
+```
+
+```{r}
+cluster_vars.cor = cor(clustv2)
+cluster_vars.cor
+```
+
+**How to change the correlation coefficient in the plot and how to change the labels size.**
+
+https://statisticsglobe.com/change-font-size-corrplot-r
+
+```{r, fig.height = 12, fig.width=12}
+
+corrplot.mixed(cluster_vars.cor,
+               lower ='ellipse',
+               upper= 'number',
+               tl.pos = 'lt',
+               diag = 'l',
+               tl.col='black',
+               number.cex = 1.75,
+               tl.cex = 1.5)
+```
+
+When the ellipse is very thin, correlation is strong. the direction of the ellipse tells us the sign of correlation. From the plot above, we can see that pct_usagecapless1000 is strongly correlated to pct_usagecap1000, with r value -0.91. We will be dropping the variable pct_usagecapless1000.
+
+## 3 Hierarchy Cluster Analysis
+
+### 3.1 Extracting clustering variables
+
+The code chunk below will be used to extract the clustering variables from the *nga_wp2* simple feature object into data.frame. The pct_usagecapless1000 variable is intentionally left out as it is highly correlated with "pct_usagecap1000"
+
+```{r}
+cluster_vars <- nga_wp2 %>%
+  select("shapeName", "wpt functional", "wpt non-functional", "pct_functional", "pct_handpump", "pct_non-functional", "pct_qualityok", "pct_rural",  "pct_usagecap1000") %>% 
+  st_set_geometry(NULL)
+
+head(cluster_vars,10)
+```
+
+```{r}
+class(cluster_vars)
+```
+
+TAKE NOTE: input of hclust() function must strictly contain only the [clustering variables]{.underline} we need. Cannot have township column 'TS.x'. Is it more for the dist() function used to compute the proximity matrix instead?
+
+Next, we need to change the rows ID by township name instead of row number by using the code chunk below. However, Row Id cannot have duplicates, thus we have to ensure the shapeName rows are all unique. We will perform the simlar transformation as we have done for clean_adm2 earlier.
+
+```{r}
+
+cluster_vars$shapeName[duplicated(cluster_vars$shapeName)]
+```
+
+```{r}
+cluster_vars[95,1] <- 'Bassa_2'
+cluster_vars[305,1] <- 'Ifelodun_2'
+cluster_vars[356,1] <- 'Irepodun_2'
+cluster_vars[520,1] <- 'Nasarawa_2'
+cluster_vars[547,1] <- 'Obi_2'
+cluster_vars[694,1] <- 'Surulere_2'
+```
+
+```{r}
+row.names(cluster_vars) <- cluster_vars$"shapeName"
+head(cluster_vars, 10)
+```
+
+Notice that the row number has been replaced into the shapeName variable.
+
+Now, we will delete the shapeName field by using the code chunk below.
+
+```{r}
+nga_hclust_var <- select(cluster_vars, c(2:9))
+head(nga_hclust_var, 10)
+```
+
+### 3.2 Data Standardisation
+
+In general, multiple variables will be used in cluster analysis. It is not unusual their values range are different. In order to avoid the cluster analysis result is baised to clustering variables with large values, it is useful to standardise the input variables before performing cluster analysis.
+
+### 3.2.1 Min-Max standardisation
+
+In the code chunk below, *normalize()* of [*heatmaply*](https://cran.r-project.org/web/packages/heatmaply/) package is used to standardise the clustering variables by using Min-Max method. The *summary()* is then used to display the summary statistics of the standardised clustering variables.
+
+I have chosen min-max standardisation as 'wpt functional' and 'wpt non-functional' are the only two variables that are not in percentage. This function will not change the values of the other 6 variables.
+
+```{r}
+nga_hclust_var.std <- normalize(nga_hclust_var)
+summary(nga_hclust_var.std)
+```
+
+```{r}
+class(nga_hclust_var.std)
+```
+
+### 3.3.2 Visualising the standardised clustering variables
+
+```{r}
+r1 <- ggplot(data = nga_hclust_var,
+            aes(x=`wpt functional`)) +
+  geom_histogram(bins=20, 
+                 color = 'black',
+                 fill = 'light green')
+
+s1 <- ggplot (data= nga_hclust_var.std, aes(x=`wpt functional`)) +
+    geom_histogram(bins=20, 
+                 color = 'black',
+                 fill = 'light green') +
+  ggtitle('Min-Max standardisation')
+
+r2 <- ggplot(data = nga_hclust_var,
+            aes(x=`wpt non-functional`)) +
+  geom_histogram(bins=20, 
+                 color = 'black',
+                 fill = 'light green')
+
+s2 <- ggplot (data= nga_hclust_var.std, aes(x=`wpt non-functional`)) +
+    geom_histogram(bins=20, 
+                 color = 'black',
+                 fill = 'light green') +
+  ggtitle('Min-Max standardisation')
+
+ggarrange (r1,s1, r2, s2,
+          ncol = 2, 
+          nrow = 2)
+```
+
+### 3.3 Computing proximity matrix
+
+In R, many packages provide functions to calculate distance matrix. We will compute the proximity matrix by using [*dist()*](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html) of R.
+
+*dist()* supports six distance proximity calculations, they are: **euclidean, maximum, manhattan, canberra, binary and minkowski**. The default is *euclidean* proximity matrix.
+
+```{r}
+proxmat <- dist(nga_hclust_var.std, method = 'euclidean')
+proxmat
+```
+
+```{r}
+class(proxmat)
+```
+
+### 3.4 Computing hierarchical clustering
+
+In R, there are several packages provide hierarchical clustering function. In this hands-on exercise, [*hclust()*](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/hclust.html) of R stats will be used.
+
+*hclust()* employed agglomeration method to compute the cluster. Eight clustering algorithms are supported, they are: [**ward.D**]{.underline}**, [ward.D2]{.underline}, [single]{.underline}, [complete]{.underline}, [average]{.underline}([UPGMA]{.underline}), [mcquitty]{.underline}([WPGMA]{.underline}), [median(WPGMC]{.underline}) and [centroid(UPGMC)]{.underline}.**
+
+The code chunk below performs hierarchical cluster analysis using ward.D method. The hierarchical clustering output is stored in an object of class **hclust** which describes the tree produced by the clustering process.
+
+hclust() needs two inputs: **proximty matrix** and **metho**d **for the hierachical clustering** that we are using. It is important to note that
+
+```{r}
+hclust_ward <- hclust(proxmat, method = 'ward.D')
+```
+
+```{r}
+str(hclust_ward)
+```
+
+We can then plot the tree by using *plot()* of R Graphics as shown in the code chunk below.
+
+**cex**. A numerical value giving the amount by which plotting text and symbols should be magnified relative to the default. cex = 0.6 means to scale down to 60% (when knitting to html) to prevent overlapping Base R plot will know to plot a dendrogram without specifying the type, because its a hclust object?
+
+```{r, fig.width=20, fig.height = 50}
+plot(hclust_ward, cex = 0.3)
+```
+
+### 
+
+3.5 Selecting the optimal clustering algorithm
+
+One of the challenge in performing hierarchical clustering is to identify stronger clustering structures. The issue can be solved by using use [*agnes()*](https://www.rdocumentation.org/packages/cluster/versions/2.1.0/topics/agnes) function of [**cluster**](https://cran.r-project.org/web/packages/cluster/) package. It functions like *hclus()*, however, with the *agnes()* function you can also get the agglomerative coefficient, which measures the amount of clustering structure found (values closer to 1 suggest strong clustering structure).
+
+The code chunk below will be used to compute the agglomerative coefficients (ac) of all hierarchical clustering algorithms.
+
+Breaking down the big formula into smaller
+
+```{r}
+attributes(agnes(nga_hclust_var.std, method = 'average'))
+```
+
+```{r}
+agnes(nga_hclust_var.std, method = 'average')$ac
+```
+
+Define a function ac, this function input is m, which inputs various clustering algorithms into the function agnes(). Next, use the map_dbl function to map the the **m** into **agnes()**
+
+**\$ac means to call the 'agglomerative coeeficients' component of agnes function (see above)**
+
+```{r}
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+ac <- function(x) {
+  agnes(nga_hclust_var.std, method = x)$ac
+}
+
+map_dbl(m, ac)
+```
+
+agnes() calculates an index to measure level of homogeneity between different methods of hclustering.
+
+With reference to the output above, we can see that Ward's method provides the strongest clustering structure among the four methods assessed. Hence, in the subsequent analysis, only Ward's method will be used.
+
+### 
+
+3.6 Determining Optimal Clusters
+
+#### 3.6.1 Gap Statistic Method
+
+The [**gap statistic**](http://www.web.stanford.edu/~hastie/Papers/gap.pdf) compares the total within intra-cluster variation for different values of k with their expected values under null reference distribution of the data. The estimate of the optimal clusters will be value that **maximize** the gap statistic (i.e., that yields the **largest gap statistic**). This means that the clustering structure is far away from the random uniform distribution of points.
+
+To compute the gap statistic, [*clusGap()*](https://www.rdocumentation.org/packages/cluster/versions/2.1.0/topics/clusGap) of [**cluster**](https://cran.r-project.org/web/packages/cluster/) package will be used.
+
+K.max - maximum number of clusters to consider, minimum 2
+
+B = integer, number of Monte Carlo ('bootstrap') samples
+
+nstart \<- isnt this only applicable to Kmeans clustering, is it about initialising a centroid?
+
+```{r}
+set.seed(12345)
+gap_stat <- clusGap(nga_hclust_var.std,
+                    FUN = hcut,
+                    nstart = 25,
+                    K.max= 20, 
+                    B= 50)
+
+#print the results
+print(gap_stat, method = 'firstmax')
+```
+
+Also note that the [*hcut*](https://rpkgs.datanovia.com/factoextra/reference/hcut.html) function used is from [**factoextra**](https://rpkgs.datanovia.com/factoextra/) package.
+
+Next, we can visualise the plot by using [*fviz_gap_stat()*](https://rpkgs.datanovia.com/factoextra/reference/fviz_nbclust.html) of [**factoextra**](https://rpkgs.datanovia.com/factoextra/) package.
+
+```{r}
+fviz_gap_stat(gap_stat)
+```
+
+For simplicity sake, the optimal cluster selected is 5.
+
+```{r}
+set.seed(12345)
+gap_stat2 <- clusGap(nga_hclust_var,
+                    FUN = hcut,
+                    nstart = 25,
+                    K.max= 20, 
+                    B= 50)
+
+#print the results
+print(gap_stat2, method = 'firstmax')
+```
+
+```{r}
+fviz_gap_stat(gap_stat2)
+```
+
+Before data normalisation, the optimal number of clusters is also 5, so it re-confirms that the optimal cluster is 5.
+
+### 3.7 Visually-driven hierarchical clustering analysis
+
+In this section, we will learn how to perform visually-driven hierarchical clustering analysis by using [*heatmaply*](https://cran.r-project.org/web/packages/heatmaply/) package.
+
+With **heatmaply**, we are able to build both highly interactive cluster heatmap or static cluster heatmap.
+
+#### 3.7.1 Transforming the data frame into a matrix
+
+The data was loaded into a **data frame**, but it has to be a **data matrix** to make the heatmap.
+
+```{r}
+nga_hclust_var_std_mat <- as.matrix(nga_hclust_var.std)
+class(nga_hclust_var_std_mat)
+```
+
+#### 3.7.2 Plotting interactive cluster heatmap using *heatmaply()*
+
+```{r, fig.height=50}
+# first perform min-max normalisation
+heatmaply(normalize(nga_hclust_var_std_mat),
+          Colv=NA,
+          dist_method = 'euclidean',
+          hclust_method = 'ward.D',
+          seriate = 'OLO',
+          colors= Blues,
+          k_row = 5,
+          margins = c(NA, 200, 60, NA),
+          fontsize_row = 4,
+          fontsize_col = 5,
+          main = 'Geographic Segmentation of Nigeria LGAs by water point indicators',
+          xlab= 'water point indicators',
+          ylab = 'Local Government Area of Nigeria'
+)
+```
+
+### 3.8 Mapping the clusters formed
+
+With closed examination of the dendragram above, we have decided to retain five clusters.
+
+[*cutree()*](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/cutree.html) of R Base will be used in the code chunk below to derive a 5-cluster model.
+
+Each region will be assigned an integer representing their cluster number.
+
+```{r}
+cutree(hclust_ward, k=5)
+```
+
+```{r}
+table(cutree(hclust_ward, k=5))
+```
+
+```{r}
+class(cutree(hclust_ward, k=5))
+```
+
+```{r}
+groups <- as.factor(cutree(hclust_ward, k=5))
+```
+
+```{r}
+attributes(groups)
+str(groups)
+```
+
+\$levels
+
+\[1\] "1" "2" "3" "4" "5"
+
+\$names
+
+\[1\] "Aba North" "Aba South" "Abadam" "Abaji" "Abak" "Abakaliki"
+
+\[7\] "Abeokuta North" "Abeokuta South" "Abi" "Aboh-Mbaise" "Abua/Odual" "Abuja Municipal"
+
+The output ***groups*** is a *list* object.
+
+In order to visualise the clusters using **qtm()**, the *groups* object need to be appended onto *shan_sf* simple feature object.
+
+The code chunk below form the join in three steps:
+
+-   the *groups* list object will be converted into a matrix;
+
+-   *cbind()* is used to append *groups* matrix onto shan_sf to produce an output simple feature object called `shan_sf_cluster`; and
+
+-   *rename* of **dplyr** package is used to rename *as.matrix.groups* field as *CLUSTER*.
+
+```{r}
+nga_hclust_var_std_cluster <- cbind(nga_wp2, as.matrix(groups))
+```
+
+Rename 'as.matrix.group' column to CLUSTER
+
+```{r}
+nga_hclust_var_std_cluster <- nga_hclust_var_std_cluster %>%  rename('CLUSTER' = 'as.matrix.groups.')
+```
+
+Next, *qtm()* of **tmap** package is used to plot the choropleth map showing the cluster formed.
+
+```{r}
+qtm(nga_hclust_var_std_cluster, 'CLUSTER')
+```
+
+```{r}
+nga_hclust_var_std_cluster %>% group_by(CLUSTER) %>% summarise(count=n())
+```
+
+According to the table above, there are 146 members in cluster 1, 88 in cluster 2, 300 in cluster 3, 90 in cluster 4 and 150 in cluster 5.
+
+[**From interactive heatmap:**]{.underline}
+
+The biggest cluster is characterised by high % of rural areas, high % of functional hand pumps with high % of acceptable water quality with low percentage of water capacity (under 1000).
+
+Second largest cluster is characterised by high percentage of rural areas that have mainly hand pump, with average % of functional wpt and acceptable water quality. There is a mixed of high % of functional and non-functional handpump.
+
+The third biggest cluster has a high% with usage capacity of 1000 and a large percentage serves the rural regions. They also have the **highest percentage of non functional pumps** but majority of the pumps also NOT hand pumps.
+
+The second smallest cluster serves a mixed of rural and urban areas with high5 of them getting good water quality and majority of the pumps serving more than 1000 people per pump. Most of the water points are also functional but lower percentage are hand pumps.
+
+The smallest cluster is characterised by LGAs with high % or rural areas with low % of functional and non-functional water points (are they unknown?) . The water quality is also not acceptable. The water pumps are also not hand pumps.
+
+```{r}
+#tapply(nga_hclust_var_std_cluster$wpt.functional, nga_hclust_var_std_cluster$CLUSTER, summary) 
+```
+
+```{r}
+ls(nga_hclust_var_std_cluster)
+```
+
+```{r}
+nga_hclust_var_std_cluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            q1 = quantile(pct_non.functional, 0.25),
+            median = median(pct_non.functional),
+            mean=mean(pct_non.functional),
+            q3 = quantile(pct_non.functional, 0.75),
+            max = max(pct_non.functional))
+```
+
+```{r}
+nga_hclust_var_std_cluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            q1 = quantile(pct_functional, 0.25),
+            median = median(pct_functional),
+            mean=mean(pct_functional),
+            q3 = quantile(pct_functional, 0.75),
+            max = max(pct_functional))
+```
+
+```{r}
+nga_hclust_var_std_cluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            q1 = quantile(pct_rural, 0.25),
+            median = median(pct_rural),
+            mean=mean(pct_rural),
+            q3 = quantile(pct_rural, 0.75),
+            max = max(pct_rural))
+```
+
+```{r}
+nga_hclust_var_std_cluster %>% 
+  group_by(CLUSTER) %>% 
+  summarise(count = n(),
+            q1 = quantile(pct_handpump, 0.25),
+            median = median(pct_handpump),
+            mean=mean(pct_handpump),
+            q3 = quantile(pct_handpump, 0.75),
+            max = max(pct_handpump))
+```
+
+## 4 Spatially Constrained Clustering - SKATER approach
+
+### 4.1 Converting into SpatialPolygonsDataFrame (required by SKATER 2006 function
+
+https://sparkbyexamples.com/r-programming/drop-dataframe-rows-in-r/
+
+First, we need to convert **nga_wp2** from sf into SpatialPolygonsDataFrame (sp). This is because SKATER function only support **sp** objects such as SpatialPolygonDataFrame.
+
+The code chunk below uses [*as_Spatial()*](https://r-spatial.github.io/sf/reference/coerce-methods.html) of **sf** package to convert **nga_wp2** into a SpatialPolygonDataFrame called **nga_wp2_sp**
+
+We will **remove row 86** of nga_wp2 because this polygon is an island and has no neighbour when we use the contiguity method. This will lead to an error when calculating the edge cost later.
+
+```{r}
+nga_wp2_sp <- as_Spatial(nga_wp2[-86,])
+```
+
+**Quick examples of deleting selected Rows from data frame in R.**
+
+https://sparkbyexamples.com/r-programming/drop-dataframe-rows-in-r/
+
+### 4.2 Computing Neighbour List
+
+Next, [poly2nb()](https://r-spatial.github.io/spdep/reference/poly2nb.html) of **spdep** package will be used to compute the neighbours list from polygon list. SKATER is based on contiguity concept, so use ply2nb() here.
+
+```{r}
+nga_wp2.nb <- poly2nb(nga_wp2_sp)
+summary(nga_wp2.nb)
+```
+
+**Row / Region 86 , shapeName of Bakassi has no neighbour. We might have to delete this row later**
+
+With nga_wp2_sp,
+
+Firstly, plot boundaries on the bottom-most layer first.
+
+Secondly, plot **neighbours list object** on top of boundaries map. The **centroid coordinates** of each polygons/ neighbours can be extracted using coordinates(nga_wp2_sp) on the sp object. Set the color to blue and specify add=TRUE to plot the network on top of the boundaries.
+
+```{r}
+plot(nga_wp2_sp, 
+     border=grey(.5))
+
+plot(nga_wp2.nb, coordinates(nga_wp2_sp),
+     col='blue',
+     add=TRUE)
+```
+
+### 4.3 Computing minimum spanning tree
+
+#### 4.3.1 Calculating edge costs
+
+Next, [*nbcosts()*](https://r-spatial.github.io/spdep/reference/nbcosts.html) of **spdep** package is used to compute the cost of each edge / connection. It is the distance between each nodes. This function compute this distance using a data.frame with observations ( variables like pct_functional, pct_non-functional etc..) vector in each node. lcost is a 'nbdist' class object.
+
+The code chunk below is used to compute the cost of each edge. Recall that **nga_hclust_var.std** is a df containing 5 variables. **nga_wp2.nb** is a neighbour list object
+
+```{r}
+class(nga_hclust_var.std)
+```
+
+```{r}
+lcost <- nbcosts(nga_wp2.nb, nga_hclust_var.std)
+```
+
+```{r}
+class(lcost)
+```
+
+```{r}
+#| eval: false
+str(lcost)
+```
+
+List of 773
+
+\$ : num \[1:4\] 0.136 1.188 0.644 1.081
+
+\$ : num \[1:3\] 0.136 0.652 1.058
+
+\$ : num \[1:3\] 1.59 1.59 1.02
+
+\$ : num \[1:7\] 0.944 0.474 1.166 0.899 1.072 ...
+
+\$ : num \[1:5\] 0.483 1.178 0.761 0.826 0.782
+
+If I have four neighbours, then I would have four edge costs.
+
+For each observation, this gives the pairwise **dissimilarity** between its values on the selected clustering variables and the values for the neighbouring observation (from the neighbour list). Basically, this is the notion of a generalised weight for a spatial weights matrix.
+
+Next, We will incorporate these costs into a weights object in the same way as we did in the calculation of inverse of distance weights. In other words, we convert the [**neighbour list object**]{.underline} to a [**list weights object**]{.underline} by specifying the ***lcost*** as the weights.
+
+Note that we specify the *style* as **B** to make sure the cost values are not row-standardised.
+
+```{r}
+#?nb2listw
+nga.w <- nb2listw(nga_wp2.nb,
+                   glist=lcost,
+                   style ='B')
+summary(nga.w)
+```
+
+```{r}
+#| eval: false
+str(nga.w)
+```
+
+List of 3
+
+\$ style : chr "B"
+
+\$ neighbours:List of 773
+
+..\$ : int \[1:4\] 2 547 623 720
+
+..\$ : int \[1:3\] 1 623 720
+
+..\$ : int \[1:3\] 260 446 506
+
+..\$ : int \[1:7\] 256 262 435 445 453 465 708
+
+\$ weights :List of 773
+
+..\$ : num \[1:4\] 0.136 1.188 0.644 1.081
+
+..\$ : num \[1:3\] 0.136 0.652 1.058
+
+..\$ : num \[1:3\] 1.59 1.59 1.02
+
+..\$ : num \[1:7\] 0.944 0.474 1.166 0.899 1.072 ...
+
+### 4.4 Computing minimum spanning tree (Each polygon has exactly one neighbour)
+
+The minimum spanning tree is computed by mean of the [*mstree()*](https://r-spatial.github.io/spdep/reference/mstree.html) of **spdep** package as shown in the code chunk below.
+
+```{r}
+nga.mst <- mstree(nga.w)
+```
+
+```{r}
+class(nga.mst)
+```
+
+```{r}
+dim(nga.mst)
+```
+
+Note that the dimension is 772 and not 773. This is because the minimum spanning tree consists on n-1 edges (links) in order to traverse all the nodes
+
+Yi xin: We can display the content of *nga.mst* by using *head()* as shown in the code chunk below. There are 772 edges in total, but we display only five here. The first node polygon 631 and the minimum cost is 0.72899 to travel to polygon 632. The tree path is created by considering the minimum cost path from all available paths. The cost is calculated using the neighbours list first, then ICT variables . Each polygon has exactly one neighbour in the Minimum Spanning Tree. This is 100% geospatial relationship as consider neighbour list first.
+
+shan_sf -\> shan_sp -\> shan.nb -\> lcost = nbcosts(shan.nb, shan_ict) -\> shan.w= nb2listw(shan.nb, glist=lcost, style ='B') -\> shan.mst \<- mstree(shan.w)
+
+```{r}
+head(nga.mst)
+```
+
+The plot method for the MST include a way to show the **observation numbers** of the **nodes** (polygon ID) in addition to the **edge.** As before, we plot this together with the township boundaries. We can see how the initial neighbour list is simplified to just **one edge** connecting **each** of the **nodes**, while passing through **all** the nodes.
+
+```{r, fig.height=15, fig.width=15}
+plot(nga_wp2_sp,
+     border = grey(.5))
+
+plot.mst(nga.mst,
+         coords=coordinates(nga_wp2_sp),         
+         col='blue',
+         cex.lab= 0.7,
+         cex.circles = 0.005,
+         add=TRUE)
+```
+
+### 4.5 Computing spatially constrained clusters using SKATER method
+
+The code chunk below compute the spatially constrained cluster using [*skater()*](https://r-spatial.github.io/spdep/reference/skater.html) of **spdep** package.
+
+nga.mst\[, 1:2\] refer to the first two components of nga.mst (see above). They refer to the edges literally, not the costs.
+
+By **cutting** the MST **4** times, we get 5 clusters. We have to perform hierarchical clustering first; else do not know optimal clusters is 5 in this case.
+
+```{r}
+clust5 <- spdep::skater(edges = nga.mst[, 1:2],
+                        data = nga_hclust_var.std,
+                        method = 'euclidean',
+                        ncuts = 4)
+```
+
+The *skater()* takes **three mandatory** arguments:
+
+\- the first two columns of the MST matrix (i.e. not the cost),
+
+\- the data matrix (to update the costs as units are being grouped), and
+
+-   the number of cuts. Note: It is set to **one less than the number of clusters**. So, the value specified is **not** the number of clusters, but the number of cuts in the graph, one less than the number of clusters.
+
+The result of the *skater()* is an object of **class** **skater**. We can examine its contents by using the code chunk below.
+
+```{r}
+str(clust5)
+```
+
+Using str(clust5), we can see several results:
+
+1.  clust5\$groups shows us the cluster number each polygon is assigned to.
+
+2.  detailed summary for each of the clusters in the edges.groups list, containing the node, edge and ssw??
+
+3.  Sum of squares measures are given as ssto for the total and ssw to show the effect of each of the cuts on the overall criterion.
+
+We can check the cluster assignment by using the conde chunk below.
+
+```{r}
+
+ccs5 <- clust5$groups
+```
+
+We can find out how many observations are in each cluster by means of the table command. Parenthetially, we can also find this as the dimension of each vector in the lists contained in edges.groups. For example, the first list has node with dimension 12, which is also the number of observations in the first cluster.
+
+Freq table
+
+```{r}
+table(ccs5)
+```
+
+Lastly, we can also plot the pruned tree that shows the five clusters on top of the townshop area.
+
+```{r, fig.height = 20, fig.width = 20}
+plot(nga_wp2_sp , border = grey(.5))
+
+plot(clust5,
+     coords = coordinates(nga_wp2_sp),
+     cex.lab = .7,
+     groups.colors=c("orange","green","blue", "brown", "pink"),
+     cex.circles = 0.005,
+     add=TRUE)
+```
+
+### 4.6 Visualising the clusters in choropleth map
+
+The code chunk below is used to plot the newly derived clusters by using SKATER method.
+
+First, set the cluster groups as matrix (as.matrix means table form) to get it ready to be appended to shan_sf_cluster (from shan_sf + hierarchical clustering results) to get another data frame called shan_sf_spatialcluster
+
+```{r}
+groups_mat <- as.matrix(clust5$groups)
+head(groups_mat)
+```
+
+```{r}
+nga_sf_spatialcluster <- cbind(nga_hclust_var_std_cluster[-86,], 
+                                as.factor(groups_mat)) %>% 
+  rename('SP_CLUSTER' = 'as.factor.groups_mat.')
+
+qtm(nga_sf_spatialcluster, 'SP_CLUSTER')
+
+```
+
+Notice this is mainly spatial relationship and some on attribute relationship but inflexibility to change the threshold.
+
+For easy comparison, it will be better to place both the [hierarchical clustering]{.underline} and [spatially constrained hierarchical clustering maps]{.underline} next to each other.
+
+```{r}
+hclust.map <- qtm(nga_hclust_var_std_cluster,
+                  'CLUSTER') +
+  tm_borders(alpha = 0.5)
+
+skclust.map <- qtm(nga_sf_spatialcluster,
+                   'SP_CLUSTER') +
+  tm_borders(alpha=0.5)
+
+tmap_arrange(hclust.map, skclust.map,
+             asp =NA, ncol =2)
+```
