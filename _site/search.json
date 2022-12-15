@@ -284,7 +284,7 @@
     "href": "Take-home_Ex02/Take-home_Ex02.html",
     "title": "Take-home_Ex02",
     "section": "",
-    "text": "pacman::p_load(rgdal, spdep, tmap, sf, ClustGeo, \n               ggpubr, cluster, factoextra, NbClust,\n               heatmaply, corrplot, psych, tidyverse, funModeling, GGally)"
+    "text": "First Load the libraries:"
   },
   {
     "objectID": "Take-home_Ex02/Take-home_Ex02.html#data-wrangling",

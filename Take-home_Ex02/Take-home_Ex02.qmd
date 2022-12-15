@@ -5,6 +5,8 @@ execute:
   freeze: auto  # re-render only when source changes
 ---
 
+First Load the libraries:
+
 ```{r}
 pacman::p_load(rgdal, spdep, tmap, sf, ClustGeo, 
                ggpubr, cluster, factoextra, NbClust,
@@ -1307,7 +1309,7 @@ ggplot(data = nga_sf_Gcluster,
   geom_boxplot()
 ```
 
-#### 5.4.2  Multivariate Visualisation
+#### 5.4.2 Multivariate Visualisation
 
 Past studies shown that parallel coordinate plot can be used to reveal clustering variables by cluster very effectively. In the code chunk below, [`ggparcoord()`](https://ggobi.github.io/ggally/reference/ggparcoord.html) of [**GGally**](https://ggobi.github.io/ggally/) package
 
